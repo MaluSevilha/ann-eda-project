@@ -39,7 +39,7 @@
   "strongest_target_spearman": 0.8865056087453822,
   "outlier_rows_train": 26006,
   "outlier_rows_train_pct": 56.14057811454353,
-  "pc1_pc2_explained_variance": 0.24919510176386203,
+  "pc1_pc2_explained_variance": 0.24919510176386236,
   "pipeline_train_shape": [
     46323,
     431
