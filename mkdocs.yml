@@ -1,0 +1,24 @@
+site_name: Projeto de Redes Neurais
+site_description: Portfólio da disciplina de Redes Neurais e Deep Learning
+theme:
+  name: material
+  language: pt-BR
+  palette:
+    primary: indigo
+    accent: blue
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+nav:
+  - Início: index.md
+  - Projetos:
+      - EDA — Regressão: projects/eda/index.md
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - pymdownx.details
+  - pymdownx.snippets
+  - pymdownx.superfences
+

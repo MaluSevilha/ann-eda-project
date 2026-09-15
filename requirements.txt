@@ -1,0 +1,9 @@
+pandas>=2.2,<3
+numpy>=2.0,<3
+matplotlib>=3.9,<4
+seaborn>=0.13,<0.14
+scikit-learn>=1.6,<2
+umap-learn>=0.5.6,<0.6
+tabulate>=0.9,<1
+mkdocs-material>=9.5,<10
+

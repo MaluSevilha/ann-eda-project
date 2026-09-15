@@ -1,0 +1,55 @@
+{
+  "raw_shape": [
+    227980,
+    72
+  ],
+  "target_available": 58112,
+  "target_missing": 169868,
+  "target_missing_pct": 74.51004474076673,
+  "modeling_rows_domestic": 58063,
+  "excluded_foreign_with_target": 49,
+  "duplicates_full_row": 0,
+  "duplicates_program_id": 0,
+  "target_mean": 64887.027676833786,
+  "target_median": 59011.0,
+  "target_std": 27703.867492904097,
+  "target_min": 6917.0,
+  "target_max": 336392.0,
+  "target_skew": 1.7548011589990045,
+  "train_shape_raw": [
+    46323,
+    33
+  ],
+  "test_shape_raw": [
+    11740,
+    33
+  ],
+  "train_institutions": 3712,
+  "test_institutions": 928,
+  "institution_overlap": 0,
+  "most_missing_column": "pct_working_in_state_5yr",
+  "most_missing_count": 188983,
+  "most_missing_pct": 82.8945521536977,
+  "strongest_numeric_pair": [
+    "occupation_employment_2024_thousands",
+    "occupation_annual_openings_thousands"
+  ],
+  "strongest_numeric_pair_spearman": 0.9759059070123164,
+  "strongest_target_feature": "median_earnings_1yr_usd",
+  "strongest_target_spearman": 0.8865056087453822,
+  "outlier_rows_train": 26006,
+  "outlier_rows_train_pct": 56.14057811454353,
+  "pc1_pc2_explained_variance": 0.24919510176386203,
+  "pipeline_train_shape": [
+    46323,
+    431
+  ],
+  "pipeline_test_shape": [
+    11740,
+    431
+  ],
+  "pipeline_nan_train": 0,
+  "pipeline_nan_test": 0,
+  "unseen_category_ok": true,
+  "n_pipeline_features": 431
+}
