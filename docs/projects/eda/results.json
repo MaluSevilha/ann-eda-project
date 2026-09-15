@@ -12,10 +12,10 @@
   "duplicates_program_id": 0,
   "target_mean": 64887.027676833786,
   "target_median": 59011.0,
-  "target_std": 27703.867492904097,
+  "target_std": 27703.8674929041,
   "target_min": 6917.0,
   "target_max": 336392.0,
-  "target_skew": 1.7548011589990045,
+  "target_skew": 1.7548011589990038,
   "train_shape_raw": [
     46323,
     33
@@ -39,7 +39,7 @@
   "strongest_target_spearman": 0.8865056087453822,
   "outlier_rows_train": 26006,
   "outlier_rows_train_pct": 56.14057811454353,
-  "pc1_pc2_explained_variance": 0.24919510176386236,
+  "pc1_pc2_explained_variance": 0.2491951017638619,
   "pipeline_train_shape": [
     46323,
     431

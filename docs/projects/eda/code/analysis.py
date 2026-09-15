@@ -66,19 +66,22 @@ def save_table(df: pd.DataFrame, filename: str) -> None:
 
 
 def compact_money_axis(ax: plt.Axes, axis: str = "x") -> None:
-    formatter = matplotlib.ticker.FuncFormatter(lambda x, _: f"US$ {x/1000:.0f} mil")
-    (ax.xaxis if axis == "x" else ax.yaxis).set_major_formatter(formatter)
+    formatter = matplotlib.ticker.FuncFormatter(lambda x, _: f"US$ {x/1000:.0f}k")
+    target_axis = ax.xaxis if axis == "x" else ax.yaxis
+    target_axis.set_major_formatter(formatter)
+    target_axis.set_major_locator(matplotlib.ticker.MaxNLocator(6))
 
 
 def target_figure(data: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
     sns.histplot(data[TARGET], bins=45, kde=True, ax=axes[0], color="#2166ac")
     axes[0].axvline(data[TARGET].median(), color="#b2182b", linestyle="--", label="Mediana")
-    axes[0].set(title="Figura 1 — Distribuição do alvo", xlabel="Renda mediana no 4º ano (US$)", ylabel="Programas")
+    axes[0].axvline(data[TARGET].mean(), color="#2ca25f", linestyle=":", label="Média")
+    axes[0].set(title="Figura 1: Distribuição do alvo", xlabel="Renda mediana no 4º ano (US$)", ylabel="Programas")
     axes[0].legend()
     compact_money_axis(axes[0])
     sns.boxplot(x=data[TARGET], ax=axes[1], color="#67a9cf")
-    axes[1].set(title="Figura 1 — Cauda e valores extremos", xlabel="Renda mediana no 4º ano (US$)")
+    axes[1].set(title="Figura 1: Cauda e valores extremos", xlabel="Renda mediana no 4º ano (US$)")
     compact_money_axis(axes[1])
     fig.suptitle("O alvo é assimétrico à direita", fontweight="bold")
     fig.tight_layout()
@@ -101,26 +104,24 @@ def numeric_univariate_figure(train: pd.DataFrame) -> None:
         "ai_software_occupation_share",
     ]
     fig, axes = plt.subplots(3, 4, figsize=(17, 11))
+    abbreviate = matplotlib.ticker.FuncFormatter(
+        lambda x, _: f"{x/1000:.0f}k" if abs(x) >= 1000 else f"{x:.0f}"
+    )
     for ax, col in zip(axes.flat, selected):
         sns.histplot(train[col], bins=35, ax=ax, color="#2166ac")
         ax.set_title(col.replace("_", " "), fontsize=9)
         ax.set_xlabel("")
         ax.set_ylabel("Contagem")
-    fig.suptitle("Figura 2 — Distribuições numéricas selecionadas (treino)", fontweight="bold")
+        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))
+        ax.xaxis.set_major_formatter(abbreviate)
+        ax.tick_params(axis="x", labelsize=8)
+    fig.suptitle("Figura 2: Distribuições numéricas selecionadas (treino)", fontweight="bold")
     fig.tight_layout()
     save_figure(fig, "fig02_numeric_distributions.png")
 
 
 def categorical_univariate_figure(train: pd.DataFrame) -> None:
-    columns = [
-        "institution_control",
-        "institution_state",
-        "cip_family_title",
-        "credential_name",
-        "distance_education",
-        "largest_linked_occupation",
-        "occupation_typical_entry_education",
-    ]
+    columns = CATEGORICAL_FEATURES  # as 7 categóricas que entram no modelo
     fig, axes = plt.subplots(4, 2, figsize=(16, 20))
     for ax, col in zip(axes.flat, columns):
         counts = train[col].fillna("Ausente").value_counts().head(10).sort_values()
@@ -129,7 +130,7 @@ def categorical_univariate_figure(train: pd.DataFrame) -> None:
         ax.set_xlabel("Programas no treino")
         ax.tick_params(axis="y", labelsize=8)
     axes.flat[-1].axis("off")
-    fig.suptitle("Figura 3 — Categorias mais frequentes (treino)", fontweight="bold", y=1.002)
+    fig.suptitle("Figura 3: Categorias mais frequentes (treino)", fontweight="bold", y=1.002)
     fig.tight_layout()
     save_figure(fig, "fig03_categorical_frequencies.png")
 
@@ -140,8 +141,18 @@ def correlation_figures(train: pd.DataFrame, corr: pd.DataFrame) -> None:
     )
     shown = strongest_to_target + [TARGET]
     fig, ax = plt.subplots(figsize=(11, 9))
-    sns.heatmap(corr.loc[shown, shown], cmap="vlag", center=0, vmin=-1, vmax=1, ax=ax)
-    ax.set_title("Figura 4 — Correlação de Spearman: variáveis mais ligadas ao alvo")
+    sns.heatmap(
+        corr.loc[shown, shown],
+        cmap="vlag",
+        center=0,
+        vmin=-1,
+        vmax=1,
+        annot=True,
+        fmt=".2f",
+        annot_kws={"size": 7},
+        ax=ax,
+    )
+    ax.set_title("Figura 4: correlação de Spearman entre as variáveis mais ligadas ao alvo")
     fig.tight_layout()
     save_figure(fig, "fig04_spearman_heatmap.png")
 
@@ -156,6 +167,10 @@ def correlation_figures(train: pd.DataFrame, corr: pd.DataFrame) -> None:
         ax=axes[0],
     )
     axes[0].set(xlabel="Renda mediana no 1º ano (US$)", ylabel="Renda mediana no 4º ano (US$)")
+    axes[0].annotate(
+        f"ρ = {corr.loc['median_earnings_1yr_usd', TARGET]:.3f}",
+        xy=(0.05, 0.92), xycoords="axes fraction", fontweight="bold",
+    )
     sns.regplot(
         data=sample,
         x="occupation_median_wage_2024_usd",
@@ -165,7 +180,11 @@ def correlation_figures(train: pd.DataFrame, corr: pd.DataFrame) -> None:
         ax=axes[1],
     )
     axes[1].set(xlabel="Salário da ocupação associada (US$)", ylabel="Renda mediana no 4º ano (US$)")
-    fig.suptitle("Figura 5 — Relações numéricas com o alvo", fontweight="bold")
+    axes[1].annotate(
+        f"ρ = {corr.loc['occupation_median_wage_2024_usd', TARGET]:.3f}",
+        xy=(0.05, 0.92), xycoords="axes fraction", fontweight="bold",
+    )
+    fig.suptitle("Figura 5: Relações numéricas com o alvo", fontweight="bold")
     fig.tight_layout()
     save_figure(fig, "fig05_numeric_target_scatter.png")
 
@@ -184,7 +203,7 @@ def categorical_target_figures(train: pd.DataFrame) -> None:
     compact_money_axis(axes[0]); compact_money_axis(axes[1])
     for ax in axes:
         ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(5))
-    fig.suptitle("Figura 6 — Distribuição do alvo por categorias institucionais", fontweight="bold")
+    fig.suptitle("Figura 6: Distribuição do alvo por categorias institucionais", fontweight="bold")
     fig.tight_layout()
     save_figure(fig, "fig06_categories_target.png")
 
@@ -193,7 +212,7 @@ def categorical_target_figures(train: pd.DataFrame) -> None:
     order = plot_data.groupby("cip_family_title")[TARGET].median().sort_values().index
     fig, ax = plt.subplots(figsize=(12, 8))
     sns.boxplot(data=plot_data, y="cip_family_title", x=TARGET, order=order, showfliers=False, ax=ax, color="#92c5de")
-    ax.set(title="Figura 7 — Alvo nas 12 famílias de curso mais frequentes", xlabel="Renda mediana no 4º ano (US$)", ylabel="Família CIP")
+    ax.set(title="Figura 7: Alvo nas 12 famílias de curso mais frequentes", xlabel="Renda mediana no 4º ano (US$)", ylabel="Família CIP")
     compact_money_axis(ax)
     ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(6))
     fig.tight_layout()
@@ -211,9 +230,18 @@ def numeric_categorical_figure(train: pd.DataFrame) -> None:
     axes[1].set(xlabel="Salário da ocupação associada (US$)", ylabel="Credencial")
     compact_money_axis(axes[1])
     axes[1].xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(5))
-    fig.suptitle("Figura 8 — Numéricas agrupadas por categorias", fontweight="bold")
+    fig.suptitle("Figura 8: Numéricas agrupadas por categorias", fontweight="bold")
     fig.tight_layout()
     save_figure(fig, "fig08_numeric_categorical.png")
+
+
+def clean_feature_label(name: str) -> str:
+    """Remove prefixos técnicos do ColumnTransformer para exibição em figuras."""
+    name = name.split("__", 1)[-1]
+    if name.startswith("missingindicator_"):
+        return "ausência: " + name.replace("missingindicator_", "").replace("_", " ")
+    name = name.replace("_infrequent_sklearn", " (outras)")
+    return name.replace("_", " ")
 
 
 def projection_figures(X_sample_t: np.ndarray, y_sample: pd.Series, feature_names: np.ndarray):
@@ -230,7 +258,7 @@ def projection_figures(X_sample_t: np.ndarray, y_sample: pd.Series, feature_name
     ).set_index("feature").sort_values("magnitude", ascending=False)
     save_table(loading_table, "pca_loadings.csv")
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(21, 6), gridspec_kw={"width_ratios": [1, 1, 1.3]})
     sc = axes[0].scatter(coords[:, 0], coords[:, 1], c=y_sample, cmap="viridis", s=9, alpha=0.65)
     axes[0].set(xlabel="PC1", ylabel="PC2", title=f"Projeção (PC1+PC2 = {pc12:.1%})")
     fig.colorbar(sc, ax=axes[0], label="Renda 4º ano (US$)")
@@ -239,10 +267,11 @@ def projection_figures(X_sample_t: np.ndarray, y_sample: pd.Series, feature_name
     axes[1].set(xlabel="Componentes", ylabel="Variância acumulada", title="Variância explicada")
     axes[1].legend()
     shown = loading_table.sort_values("magnitude")
-    axes[2].barh(shown.index.astype(str), shown["magnitude"], color="#4393c3")
+    clean_labels = [clean_feature_label(name) for name in shown.index.astype(str)]
+    axes[2].barh(clean_labels, shown["magnitude"], color="#4393c3")
     axes[2].set(xlabel="Magnitude nos dois PCs", title="Maiores loadings PC1/PC2")
-    axes[2].tick_params(axis="y", labelsize=7)
-    fig.suptitle("Figura 9 — PCA no treino pré-processado", fontweight="bold")
+    axes[2].tick_params(axis="y", labelsize=9)
+    fig.suptitle("Figura 9: PCA no treino pré-processado", fontweight="bold")
     fig.tight_layout()
     save_figure(fig, "fig09_pca.png")
 
@@ -252,7 +281,7 @@ def projection_figures(X_sample_t: np.ndarray, y_sample: pd.Series, feature_name
         sc = ax.scatter(emb[:, 0], emb[:, 1], c=y_sample, cmap="viridis", s=8, alpha=0.7)
         ax.set(title=f"perplexity = {perplexity}", xlabel="t-SNE 1", ylabel="t-SNE 2")
     fig.colorbar(sc, ax=axes, label="Renda 4º ano (US$)", shrink=0.8)
-    fig.suptitle("Figura 10 — t-SNE: sensibilidade à perplexidade", fontweight="bold")
+    fig.suptitle("Figura 10: t-SNE: sensibilidade à perplexidade", fontweight="bold")
     save_figure(fig, "fig10_tsne.png")
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
@@ -261,7 +290,7 @@ def projection_figures(X_sample_t: np.ndarray, y_sample: pd.Series, feature_name
         sc = ax.scatter(emb[:, 0], emb[:, 1], c=y_sample, cmap="viridis", s=8, alpha=0.7)
         ax.set(title=f"n_neighbors = {neighbors}", xlabel="UMAP 1", ylabel="UMAP 2")
     fig.colorbar(sc, ax=axes, label="Renda 4º ano (US$)", shrink=0.8)
-    fig.suptitle("Figura 11 — UMAP: sensibilidade ao número de vizinhos", fontweight="bold")
+    fig.suptitle("Figura 11: UMAP: sensibilidade ao número de vizinhos", fontweight="bold")
     save_figure(fig, "fig11_umap.png")
     return pc12
 
