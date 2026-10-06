@@ -1,41 +1,76 @@
-| Coluna | Grupo | Tipo | O que significa | % ausente (treino) |
-|---|---|---|---|---:|
-| `median_earnings_4yr_usd` | **Alvo** | numérica (US$) | Renda anual mediana de quem se formou, medida 4 anos depois. É o que o modelo vai tentar prever. | 0 |
-| `is_main_campus` | Instituição | binária (0/1) | Se a linha é o campus principal (1) ou uma unidade satélite (0). | 0 |
-| `institution_latitude` | Instituição | numérica | Latitude da instituição. | 4,6 |
-| `institution_longitude` | Instituição | numérica | Longitude da instituição. | 4,6 |
-| `institution_is_hbcu` | Instituição | binária (0/1) | Se é uma "Historically Black College/University". | 4,6 |
-| `institution_admission_rate` | Instituição | numérica (0–1) | Taxa de aceitação de candidatos. | 36,4 |
-| `institution_avg_sat` | Instituição | numérica | Nota média do SAT dos aprovados. | 51,6 |
-| `institution_undergrad_enrollment` | Instituição | numérica | Número de alunos de graduação matriculados. | 5,2 |
-| `institution_tuition_in_state_usd` | Instituição | numérica (US$) | Mensalidade anual para quem mora no mesmo estado. | 13,5 |
-| `institution_tuition_out_state_usd` | Instituição | numérica (US$) | Mensalidade anual para quem mora fora do estado. | 13,5 |
-| `institution_control` | Instituição | categórica | Tipo de gestão: pública, privada sem fins lucrativos ou privada com fins lucrativos. | 0 |
-| `institution_state` | Instituição | categórica | Sigla do estado (55 valores possíveis). | 4,6 |
-| `awards_year1` | Curso | numérica | Diplomas concedidos pelo curso no 1º ano medido. | 6,7 |
-| `awards_year2` | Curso | numérica | Diplomas concedidos pelo curso no 2º ano medido. | 8,2 |
-| `outcomes_shared_across_campuses` | Curso | binária (0/1) | Se o resultado divulgado é compartilhado entre vários campi da mesma instituição, e não exclusivo desta linha. | 0 |
-| `cip_title` | Curso | categórica | Nome do curso (código CIP de 4 dígitos). 350 valores possíveis, muitos raros. | 0 |
-| `credential_name` | Curso | categórica | Nível do diploma: certificado, associado, bacharelado, mestrado etc. | 0 |
-| `distance_education` | Curso | categórica | Modalidade: presencial, todo online ou mista. | 0 |
-| `median_earnings_1yr_usd` | Financeiro | numérica (US$) | Renda mediana de quem se formou, medida **1 ano** depois (não 4). É o sinal mais forte ligado ao alvo (ρ = 0,887), mas falta em ~18% do treino. | 18,2 |
-| `earnings_cohort_size_1yr` | Financeiro | numérica | Quantos ex-alunos entraram na conta de `median_earnings_1yr_usd`. | 18,2 |
-| `median_debt_usd` | Financeiro | numérica (US$) | Dívida estudantil mediana dos formados. | 25,4 |
-| `debt_borrower_count` | Financeiro | numérica | Quantos formados tinham empréstimo estudantil. | 20,5 |
-| `linked_occupations_count` | Ocupação | numérica | Quantas ocupações (O\*NET) estão associadas a este curso. | 0,0 |
-| `largest_linked_occupation` | Ocupação | categórica | Nome da ocupação mais associada ao curso. | 1,5 |
-| `occupation_typical_entry_education` | Ocupação | categórica | Escolaridade normalmente exigida para entrar nessa ocupação. | 1,5 |
-| `occupation_employment_2024_thousands` | Ocupação | numérica (milhares) | Total de pessoas empregadas nessa ocupação em 2024 (BLS). | 1,5 |
-| `occupation_growth_pct_2024_34` | Ocupação | numérica (%) | Crescimento projetado do emprego entre 2024 e 2034. | 1,5 |
-| `occupation_growth_pct_max` | Ocupação | numérica (%) | Maior crescimento entre as ocupações associadas ao curso. | 1,5 |
-| `occupation_annual_openings_thousands` | Ocupação | numérica (milhares) | Vagas abertas por ano, projeção BLS. | 1,5 |
-| `occupation_median_wage_2024_usd` | Ocupação | numérica (US$) | Salário mediano da ocupação em 2024 (BLS), não do curso. | 1,5 |
-| `ai_software_occupation_share` | IA / Tecnologia | numérica (0–1) | Fração das ocupações ligadas ao curso que já usam software de IA no trabalho. | 4,2 |
-| `expert_system_occupation_share` | IA / Tecnologia | numérica (0–1) | Fração que usa sistemas especialistas. | 4,2 |
-| `ai_tools_max_per_occupation` | IA / Tecnologia | numérica | Maior número de ferramentas de IA citadas numa ocupação ligada. | 4,2 |
-| `hot_technologies_mean_per_occupation` | IA / Tecnologia | numérica | Média de "tecnologias em alta" (O\*NET) por ocupação ligada. | 4,2 |
-| `opeid6` | Identificador | categórica | Código da instituição. Não entra como feature: serve só para agrupar o split treino/teste, evitando que a mesma instituição apareça nos dois lados. | 0 |
+| Coluna | Fonte original | Papel no projeto | Tipo semântico | Unidade / escala | Significado | Decisão de uso |
+|---|---|---|---|---|---|---|
+| `program_id` | Dataset derivado | Identificador | Categórica nominal | Código | Identificador único da combinação instituição × curso × credencial. | Excluir: identifica a linha. |
+| `unitid` | IPEDS / College Scorecard | Identificador | Categórica nominal | Código UNITID | Identificador federal da instituição. | Excluir: identificador redundante. |
+| `opeid6` | College Scorecard | Agrupamento do split | Categórica nominal | Código OPEID de 6 dígitos | Identificador da instituição usado para impedir que ela apareça em treino e teste. | Usar somente no split agrupado. |
+| `institution_name` | IPEDS / College Scorecard | Preditora candidata | Categórica nominal | Texto | Nome da instituição. | Excluir: alta cardinalidade e grafias inconsistentes. |
+| `institution_control` | IPEDS / College Scorecard | Preditora | Categórica nominal | Categoria administrativa | Tipo de controle da instituição. | Manter e codificar por one-hot. |
+| `is_main_campus` | IPEDS / College Scorecard | Preditora | Binária | 0/1 | Indica se a unidade é o campus principal. | Manter como numérica binária. |
+| `institution_city` | IPEDS / College Scorecard | Preditora candidata | Categórica nominal | Texto | Cidade da instituição. | Excluir: alta cardinalidade; o estado representa a localização. |
+| `institution_state` | IPEDS / College Scorecard | Preditora | Categórica nominal | Sigla estadual | Estado ou território da instituição. | Manter e codificar por one-hot. |
+| `institution_region` | IPEDS / College Scorecard | Preditora candidata | Categórica nominal | Região dos EUA | Região geográfica da instituição. | Excluir: redundante com o estado. |
+| `institution_latitude` | IPEDS / College Scorecard | Preditora | Numérica contínua | Graus | Latitude da instituição. | Manter, imputar, limitar outliers e padronizar. |
+| `institution_longitude` | IPEDS / College Scorecard | Preditora | Numérica contínua | Graus | Longitude da instituição. | Manter, imputar, limitar outliers e padronizar. |
+| `institution_is_hbcu` | IPEDS / College Scorecard | Preditora | Binária | 0/1 | Indica se é uma Historically Black College or University. | Manter como numérica binária. |
+| `institution_admission_rate` | IPEDS / College Scorecard | Preditora | Numérica contínua | Proporção 0–1 | Taxa de admissão da instituição. | Manter, imputar, limitar outliers e padronizar. |
+| `institution_avg_sat` | IPEDS / College Scorecard | Preditora | Numérica contínua | Pontos SAT | Nota SAT média dos estudantes admitidos. | Manter, imputar, limitar outliers e padronizar. |
+| `institution_undergrad_enrollment` | IPEDS / College Scorecard | Preditora | Numérica discreta | Estudantes | Total de matrículas de graduação na instituição. | Manter, imputar, limitar outliers e padronizar. |
+| `institution_tuition_in_state_usd` | IPEDS / College Scorecard | Preditora | Numérica contínua | US$ por ano | Mensalidade anual para residentes do estado. | Manter, imputar, limitar outliers e padronizar. |
+| `institution_tuition_out_state_usd` | IPEDS / College Scorecard | Preditora | Numérica contínua | US$ por ano | Mensalidade anual para não residentes do estado. | Manter, imputar, limitar outliers e padronizar. |
+| `cip_code_4digit` | IPEDS | Preditora candidata | Categórica nominal | Código CIP de 4 dígitos | Código da área detalhada do programa. | Excluir: redundante com `cip_title` e perde zeros à esquerda como número. |
+| `cip_title` | IPEDS | Preditora | Categórica nominal | Texto | Nome da área detalhada do programa associada ao CIP. | Manter e codificar por one-hot com categorias raras agrupadas. |
+| `cip_family_code` | IPEDS | Preditora candidata | Categórica nominal | Código CIP de 2 dígitos | Código da família ampla do programa. | Excluir: redundante com a área detalhada. |
+| `cip_family_title` | IPEDS | Preditora candidata | Categórica nominal | Texto | Nome da família ampla do programa. | Excluir: redundante com `cip_title`; usar apenas na EDA. |
+| `credential_level` | IPEDS / College Scorecard | Preditora candidata | Categórica codificada | Códigos 1–8 e 99 | Código do nível de credencial; 99 representa programa sem credencial. | Excluir: redundante com `credential_name`. |
+| `credential_name` | IPEDS / College Scorecard | Preditora | Categórica nominal | Texto | Nome do nível de credencial, inclusive programas sem credencial. | Manter e codificar por one-hot. |
+| `distance_education` | IPEDS | Preditora | Categórica nominal | Modalidade | Situação de oferta presencial, parcial ou totalmente a distância. | Manter e codificar por one-hot. |
+| `awards_year1` | IPEDS | Preditora | Numérica discreta | Diplomas / certificados | Quantidade de credenciais concedidas no primeiro ano de referência do dataset. | Manter, imputar, limitar outliers e padronizar. |
+| `awards_year2` | IPEDS | Preditora | Numérica discreta | Diplomas / certificados | Quantidade de credenciais concedidas no segundo ano de referência do dataset. | Manter, imputar, limitar outliers e padronizar. |
+| `outcomes_shared_across_campuses` | College Scorecard | Preditora | Binária | 0/1 | Indica se os resultados do programa são compartilhados entre campi. | Manter como numérica binária. |
+| `median_earnings_4yr_usd` | College Scorecard | Alvo | Numérica contínua | US$ por ano | Renda anual mediana dos concluintes quatro anos após a conclusão. | Usar como alvo; nunca imputar nem incluir nas entradas. |
+| `earnings_cohort_size_4yr` | College Scorecard | Preditora candidata | Numérica discreta | Pessoas | Tamanho da coorte usada para calcular a renda de quatro anos. | Excluir: medida junto com o alvo. |
+| `national_median_earnings_4yr_usd` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | US$ por ano | Mediana nacional de renda em quatro anos para o grupo de comparação. | Excluir: agregado calculado a partir do alvo. |
+| `national_p25_earnings_4yr_usd` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | US$ por ano | Percentil 25 nacional da renda em quatro anos para o grupo de comparação. | Excluir: agregado calculado a partir do alvo. |
+| `national_p75_earnings_4yr_usd` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | US$ por ano | Percentil 75 nacional da renda em quatro anos para o grupo de comparação. | Excluir: agregado calculado a partir do alvo. |
+| `earnings_vs_national_pct` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Percentual | Diferença ou razão percentual entre a renda do programa e a referência nacional. | Excluir: derivada diretamente do alvo. |
+| `median_earnings_1yr_usd` | College Scorecard | Preditora | Numérica contínua | US$ por ano | Renda anual mediana dos concluintes um ano após a conclusão. | Manter, imputar com indicador, limitar outliers e padronizar. |
+| `earnings_cohort_size_1yr` | College Scorecard | Preditora | Numérica discreta | Pessoas | Tamanho da coorte usada para calcular a renda de um ano. | Manter, imputar com indicador, limitar outliers e padronizar. |
+| `median_earnings_5yr_usd` | College Scorecard | Preditora candidata | Numérica contínua | US$ por ano | Renda anual mediana dos concluintes cinco anos após a conclusão. | Excluir: informação posterior ao alvo. |
+| `earnings_cohort_size_5yr` | College Scorecard | Preditora candidata | Numérica discreta | Pessoas | Tamanho da coorte usada para calcular a renda de cinco anos. | Excluir: informação posterior ao alvo. |
+| `not_working_count_5yr` | College Scorecard | Preditora candidata | Numérica discreta | Pessoas | Número de integrantes da coorte que não trabalhavam no horizonte de cinco anos. | Excluir: informação posterior ao alvo. |
+| `count_above_hs_threshold_5yr` | College Scorecard | Preditora candidata | Numérica discreta | Pessoas | Número de concluintes com renda acima do limiar de ensino médio em cinco anos. | Excluir: informação posterior ao alvo. |
+| `count_working_in_state_5yr` | College Scorecard | Preditora candidata | Numérica discreta | Pessoas | Número de concluintes trabalhando no mesmo estado em cinco anos. | Excluir: informação posterior ao alvo. |
+| `median_debt_usd` | College Scorecard | Preditora | Numérica contínua | US$ | Dívida estudantil federal mediana dos concluintes mutuários. | Manter, imputar com indicador, limitar outliers e padronizar. |
+| `debt_borrower_count` | College Scorecard | Preditora | Numérica discreta | Pessoas | Número de mutuários na coorte usada para a dívida mediana. | Manter, imputar com indicador, limitar outliers e padronizar. |
+| `median_monthly_payment_usd` | College Scorecard | Preditora candidata | Numérica contínua | US$ por mês | Pagamento mensal mediano estimado da dívida estudantil. | Excluir: redundante com a dívida mediana. |
+| `earnings_growth_pct_1yr_to_5yr` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Percentual | Crescimento da renda mediana entre um e cinco anos após a conclusão. | Excluir: usa informação posterior ao alvo. |
+| `earnings_trajectory_category` | Derivada do College Scorecard | Preditora candidata | Categórica ordinal | Categoria | Faixa da trajetória de crescimento da renda entre um e cinco anos. | Excluir: usa informação posterior ao alvo. |
+| `debt_to_earnings_1yr` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Razão | Razão entre dívida mediana e renda de um ano. | Excluir: fórmula de duas features já presentes. |
+| `debt_to_earnings_4yr` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Razão | Razão entre dívida mediana e renda de quatro anos. | Excluir: derivada diretamente do alvo. |
+| `payment_to_income_pct_1yr` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Percentual | Parcela anualizada da dívida em relação à renda de um ano. | Excluir: fórmula de duas features já presentes. |
+| `pct_above_hs_threshold_5yr` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Percentual 0–100 | Percentual da coorte acima do limiar de renda de ensino médio em cinco anos. | Excluir: informação posterior ao alvo. |
+| `pct_working_5yr` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Percentual 0–100 | Percentual da coorte trabalhando no horizonte de cinco anos. | Excluir: informação posterior ao alvo. |
+| `pct_working_in_state_5yr` | Derivada do College Scorecard | Preditora candidata | Numérica contínua | Percentual 0–100 | Percentual da coorte trabalhando no mesmo estado em cinco anos. | Excluir: informação posterior ao alvo. |
+| `linked_occupations_count` | NCES CIP–SOC | Preditora | Numérica discreta | Ocupações | Quantidade de ocupações SOC associadas ao programa. | Manter, imputar, limitar outliers e padronizar. |
+| `linked_occupations_in_bls` | NCES CIP–SOC / BLS | Preditora candidata | Numérica discreta | Ocupações | Quantidade de ocupações associadas encontradas nos dados do BLS. | Excluir: redundante com a contagem total de ocupações. |
+| `largest_linked_occupation` | NCES CIP–SOC / BLS | Preditora | Categórica nominal | Texto | Nome da maior ocupação associada ao curso segundo o emprego do BLS. | Manter e codificar por one-hot com categorias raras agrupadas. |
+| `largest_linked_occupation_soc` | NCES CIP–SOC / BLS | Preditora candidata | Categórica nominal | Código SOC | Código da maior ocupação associada ao curso. | Excluir: redundante com o nome da ocupação. |
+| `occupation_typical_entry_education` | BLS | Preditora | Categórica ordinal tratada como nominal | Categoria educacional | Escolaridade típica de entrada da maior ocupação associada. | Manter e codificar por one-hot. |
+| `occupation_employment_2024_thousands` | BLS | Preditora | Numérica contínua | Milhares de empregos | Emprego agregado em 2024 nas ocupações associadas. | Manter, imputar, limitar outliers e padronizar. |
+| `occupation_growth_pct_2024_34` | BLS | Preditora | Numérica contínua | Percentual | Crescimento projetado agregado das ocupações entre 2024 e 2034. | Manter, imputar, limitar outliers e padronizar. |
+| `occupation_growth_pct_max` | BLS | Preditora | Numérica contínua | Percentual | Maior crescimento projetado entre as ocupações associadas. | Manter, imputar, limitar outliers e padronizar. |
+| `occupation_annual_openings_thousands` | BLS | Preditora | Numérica contínua | Milhares de vagas por ano | Aberturas anuais agregadas nas ocupações associadas. | Manter, imputar, limitar outliers e padronizar. |
+| `occupation_median_wage_2024_usd` | BLS | Preditora | Numérica contínua | US$ por ano | Salário mediano de 2024 agregado das ocupações associadas. | Manter, imputar, limitar outliers e padronizar. |
+| `linked_occupations_in_onet` | NCES CIP–SOC / O*NET | Preditora candidata | Numérica discreta | Ocupações | Quantidade de ocupações associadas encontradas no O*NET. | Excluir: redundante com a contagem total de ocupações. |
+| `occupations_using_ai_software` | O*NET | Preditora candidata | Numérica discreta | Ocupações | Quantidade de ocupações associadas que citam software de IA. | Excluir: redundante com a proporção equivalente. |
+| `ai_software_occupation_share` | Derivada do O*NET | Preditora | Numérica contínua | Proporção 0–1 | Fração das ocupações associadas que citam software de IA. | Manter, imputar, limitar outliers e padronizar. |
+| `expert_system_occupation_share` | Derivada do O*NET | Preditora | Numérica contínua | Proporção 0–1 | Fração das ocupações associadas que citam sistemas especialistas. | Manter, imputar, limitar outliers e padronizar. |
+| `ai_tools_max_per_occupation` | Derivada do O*NET | Preditora | Numérica discreta | Ferramentas por ocupação | Maior número de ferramentas de IA citado por uma ocupação associada. | Manter, imputar, limitar outliers e padronizar. |
+| `hot_technologies_mean_per_occupation` | Derivada do O*NET | Preditora | Numérica contínua | Tecnologias por ocupação | Média de tecnologias em alta por ocupação associada. | Manter, imputar, limitar outliers e padronizar. |
+| `ai_tool_examples` | O*NET | Preditora candidata | Texto livre | Lista textual | Exemplos de ferramentas de IA citadas nas ocupações associadas. | Excluir: texto livre sem representação tabular estável. |
+| `earnings_4yr_status` | Derivada do College Scorecard | Indicador de disponibilidade | Categórica nominal | Status | Indica se a renda de quatro anos foi divulgada ou suprimida. | Excluir: revela diretamente a disponibilidade do alvo. |
+| `earnings_1yr_status` | Derivada do College Scorecard | Indicador de disponibilidade | Categórica nominal | Status | Indica se a renda de um ano foi divulgada ou suprimida. | Excluir: a ausência já é representada pelo imputador. |
+| `earnings_5yr_status` | Derivada do College Scorecard | Indicador de disponibilidade | Categórica nominal | Status | Indica se a renda de cinco anos foi divulgada ou suprimida. | Excluir: informação posterior ao alvo. |
+| `debt_status` | Derivada do College Scorecard | Indicador de disponibilidade | Categórica nominal | Status | Indica se a dívida mediana foi divulgada ou suprimida. | Excluir: a ausência já é representada pelo imputador. |
 
-**Como ler:** cada linha do dataset é um programa, a combinação de uma instituição, um curso (CIP) e um nível de credencial, não uma pessoa. "% ausente" é calculado só dentro do treino (46.323 linhas), depois de já remover os programas sem alvo.
-
-Esta tabela cobre as 33 colunas usadas como *features* + o alvo + o identificador de agrupamento (`opeid6`). O arquivo bruto tem 72 colunas; as demais foram descartadas, ver a tabela de exclusões na seção 1-B.
+**Leitura da tabela.** Cada linha do arquivo representa um programa — a combinação de instituição, área de estudo (CIP) e nível de credencial —, não uma pessoa. A classificação fecha exatamente as 72 colunas: 33 preditoras, um alvo, um identificador reservado ao split e 37 colunas excluídas. As descrições das variáveis compostas foram inferidas do nome e das fontes declaradas pelo produtor quando não havia definição individual no data card; por isso, a análise é associativa, não causal.

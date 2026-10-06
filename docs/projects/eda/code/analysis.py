@@ -11,6 +11,7 @@ pré-processador pronto para a futura entrega de regressão.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -39,6 +40,7 @@ sys.path.insert(0, str(CODE_DIR))
 
 from pipeline import (  # noqa: E402
     CATEGORICAL_FEATURES,
+    DROPPED_COLUMNS,
     GROUP_COLUMN,
     MODEL_FEATURES,
     NUMERIC_FEATURES,
@@ -49,6 +51,59 @@ from pipeline import (  # noqa: E402
 RANDOM_STATE = 42
 TEST_SIZE = 0.20
 PROJECTION_SAMPLE = 3000
+DATA_DICTIONARY_PATH = TABLE_DIR / "data_dictionary.md"
+
+
+def validate_schema(raw: pd.DataFrame) -> None:
+    """Garante que cada coluna bruta tenha um único papel documentado."""
+    groups = {
+        "features numéricas": set(NUMERIC_FEATURES),
+        "features categóricas": set(CATEGORICAL_FEATURES),
+        "alvo": {TARGET},
+        "agrupamento do split": {GROUP_COLUMN},
+        "colunas excluídas": set(DROPPED_COLUMNS),
+    }
+    labels = list(groups)
+    expected_sizes = {
+        "features numéricas": 26,
+        "features categóricas": 7,
+        "alvo": 1,
+        "agrupamento do split": 1,
+        "colunas excluídas": 37,
+    }
+    invalid_sizes = {
+        label: {"esperado": expected_sizes[label], "observado": len(columns)}
+        for label, columns in groups.items()
+        if len(columns) != expected_sizes[label]
+    }
+    overlaps = {
+        f"{labels[i]} × {labels[j]}": sorted(groups[labels[i]] & groups[labels[j]])
+        for i in range(len(labels))
+        for j in range(i + 1, len(labels))
+        if groups[labels[i]] & groups[labels[j]]
+    }
+    classified = set().union(*groups.values())
+    observed = set(raw.columns)
+    missing = sorted(classified - observed)
+    unexpected = sorted(observed - classified)
+    if len(raw.columns) != 72 or invalid_sizes or overlaps or missing or unexpected:
+        raise SystemExit(
+            "Esquema inválido: "
+            f"colunas={len(raw.columns)}, tamanhos={invalid_sizes}, sobreposições={overlaps}, "
+            f"ausentes={missing}, inesperadas={unexpected}"
+        )
+
+    dictionary_text = DATA_DICTIONARY_PATH.read_text(encoding="utf-8")
+    documented = re.findall(r"^\| `([^`]+)` \|", dictionary_text, flags=re.MULTILINE)
+    duplicated = sorted({column for column in documented if documented.count(column) > 1})
+    undocumented = sorted(observed - set(documented))
+    extra_documented = sorted(set(documented) - observed)
+    if len(documented) != 72 or duplicated or undocumented or extra_documented:
+        raise SystemExit(
+            "Dicionário inválido: "
+            f"linhas={len(documented)}, duplicadas={duplicated}, "
+            f"não documentadas={undocumented}, extras={extra_documented}"
+        )
 
 
 def save_figure(fig: plt.Figure, filename: str) -> None:
@@ -301,6 +356,7 @@ def main() -> None:
         raise SystemExit("Dataset ausente. Execute primeiro: python download_data.py")
 
     raw = pd.read_csv(DATA_PATH, low_memory=False)
+    validate_schema(raw)
     raw_rows, raw_cols = raw.shape
     target_available = int(raw[TARGET].notna().sum())
     target_missing = raw_rows - target_available
@@ -310,28 +366,40 @@ def main() -> None:
     missing = pd.DataFrame({"n_ausentes": raw.isna().sum(), "percentual": raw.isna().mean() * 100}).sort_values("percentual", ascending=False)
     save_table(missing, "missing_values.csv")
 
-    impossible = pd.DataFrame(
+    quality_issues = pd.DataFrame(
         {
-            "problema": [
+            "condição": [
                 "pct_above_hs_threshold_5yr > 100",
                 "pct_working_in_state_5yr > 100",
-                "tuition in-state igual a zero",
                 "crescimento 1º–5º ano > 200%",
-                "credential_level = 99 (não ordinal)",
+                "credential_level = 99",
+                "tuition in-state igual a zero",
             ],
-            "linhas": [
+            "quantidade": [
                 int((raw["pct_above_hs_threshold_5yr"] > 100).sum()),
                 int((raw["pct_working_in_state_5yr"] > 100).sum()),
-                int((raw["institution_tuition_in_state_usd"] == 0).sum()),
                 int((raw["earnings_growth_pct_1yr_to_5yr"] > 200).sum()),
                 int((raw["credential_level"] == 99).sum()),
+                int((raw["institution_tuition_in_state_usd"] == 0).sum()),
+            ],
+            "classificação": [
+                "Inconsistência matemática",
+                "Inconsistência matemática",
+                "Valor extremo possível",
+                "Categoria válida: Non-Credential Program",
+                "Valor plausível",
+            ],
+            "decisão": [
+                "Excluir: variável de 5 anos, posterior ao alvo",
+                "Excluir: variável de 5 anos, posterior ao alvo",
+                "Excluir: usa informação posterior ao alvo",
+                "Usar credential_name; excluir apenas o código redundante",
+                "Manter a feature; não corrigir como erro",
             ],
         }
     )
-    save_table(impossible.set_index("problema"), "quality_issues.csv")
+    save_table(quality_issues.set_index("condição"), "quality_issues.csv")
 
-    # O alvo é necessário para regressão; estrangeiras formam uma população
-    # estruturalmente distinta e apenas 49 delas têm o alvo divulgado.
     data = raw.loc[raw[TARGET].notna() & raw["institution_control"].ne("Foreign")].copy()
     excluded_foreign = target_available - len(data)
     target_stats = data[TARGET].describe()
@@ -342,6 +410,17 @@ def main() -> None:
     train_idx, test_idx = next(splitter.split(data, groups=data[GROUP_COLUMN]))
     train = data.iloc[train_idx].copy()
     test = data.iloc[test_idx].copy()
+
+    split_summary = pd.DataFrame(
+        {
+            "programas": [len(train), len(test)],
+            "instituições": [train[GROUP_COLUMN].nunique(), test[GROUP_COLUMN].nunique()],
+            "média do alvo (US$)": [train[TARGET].mean(), test[TARGET].mean()],
+            "mediana do alvo (US$)": [train[TARGET].median(), test[TARGET].median()],
+        },
+        index=["Treino", "Teste"],
+    )
+    save_table(split_summary, "split_target_summary.csv")
 
     numeric_stats = train[NUMERIC_FEATURES + [TARGET]].describe(percentiles=[0.25, 0.5, 0.75]).T
     numeric_stats["median"] = train[NUMERIC_FEATURES + [TARGET]].median()

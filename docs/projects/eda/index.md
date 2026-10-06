@@ -14,14 +14,18 @@ ai_use: "OpenAI Codex e Anthropic ClaudeCode foram usados no sketch do codigo, e
 ## 0. Proposta
 
 Este projeto prepara uma tarefa de **regressão**. O objetivo é prever
-`median_earnings_4yr_usd`: a renda anual mediana de ex-alunos, medida 4 anos
-depois de entrarem no curso. Cada linha da base é um **programa**: a
+`median_earnings_4yr_usd`: a renda anual mediana de concluintes, medida 4 anos
+depois da conclusão do curso. Cada linha da base é um **programa**: a
 combinação de uma instituição, um curso (código CIP) e um nível de
 credencial, não uma pessoa.
 
 - **Dataset:** [College Majors 2026: Earnings, Debt, Jobs, AI](https://www.kaggle.com/datasets/kylefengkfeng209/college-majors-2026-earnings-debt-jobs-ai), do Kaggle.
 - **Tamanho:** 227.980 linhas × 72 colunas.
-- **Origem:** integração pública de College Scorecard, IPEDS, BLS e O\*NET.
+- **Origem:** integração pública de College Scorecard, IPEDS, NCES CIP–SOC,
+  BLS e O\*NET. A semântica dos dados de renda segue a
+  [documentação técnica do College Scorecard](https://collegescorecard.ed.gov/files/FieldOfStudyDataDocumentation.pdf)
+  e a [atualização oficial de 2026](https://fsapartners.ed.gov/fsa-print/publication/1006843),
+  que define a medição quatro anos após a graduação.
 - **Motivação:** entender quanto o curso, a instituição, a ocupação associada e a exposição a tecnologias de IA ajudam a explicar o resultado financeiro do ex-aluno.
 - **Primeiro risco:** o alvo não está disponível para todo mundo. **169.868 linhas (74,51%)** não têm `median_earnings_4yr_usd`, principalmente porque o governo americano suprime esse número quando a turma é pequena demais (regra de privacidade).
 
@@ -33,11 +37,10 @@ treinado**, conforme o enunciado.
 ### A. Dicionário de dados
 
 `program_id` é a chave da tabela: tem **227.980 valores únicos**, sem
-nenhum ausente. A tabela abaixo descreve as colunas que **sobrevivem** ao
-pré-processamento: o alvo, as 33 features do modelo e `opeid6` (usado só
-para separar treino/teste, não como feature). As outras 38 colunas do
-arquivo bruto foram descartadas; o motivo de cada uma está detalhado na
-seção 1‑B, logo abaixo.
+nenhum ausente. A tabela abaixo cobre as **72 colunas** do arquivo: 33
+features do modelo, o alvo, `opeid6` (usado só para separar treino/teste) e
+37 colunas excluídas como preditoras. Para cada uma, registra fonte, papel,
+tipo semântico, unidade, significado e decisão de uso.
 
 Algumas descrições são inferidas a partir do nome da coluna e da fonte
 (College Scorecard, BLS, O\*NET), pois o Kaggle não distribui um codebook
@@ -67,26 +70,26 @@ pequena), não por acaso. As colunas com mais buracos:
 | `debt_to_earnings_4yr` | 184.605 | 80,97 |
 | `median_debt_usd` | 181.307 | 79,53 |
 
-[Tabela completa de valores ausentes](tables/missing_values.csv).
+[Tabela completa de valores ausentes — contagem e percentual das 72 colunas](tables/missing_values.md).
 
-**Valores estranhos.** Alguns valores fogem da faixa esperada. Nem todos são
-erro; por isso a coluna "É erro?" abaixo:
+**Valores inconsistentes, extremos ou especiais.** Os cinco casos abaixo
+foram quantificados separando impossibilidades matemáticas de valores apenas
+raros ou categorias válidas:
 
-| Problema | Linhas | É erro? |
-|---|---:|---|
-| % acima do salário de ensino médio > 100% | 427 | Sim, percentual não pode passar de 100 |
-| % trabalhando no mesmo estado > 100% | 145 | Sim, idem |
-| Crescimento de renda do 1º ao 5º ano > 200% | 215 | Sim, valor implausível para a maioria dos casos |
-| Código de credencial = 99 | 1.700 | Sim, não pertence à escala ordinal 1–8, tratado como categoria à parte |
-| Mensalidade in-state = US$ 0 | 89 | Não necessariamente, pode ser um programa subsidiado/gratuito real |
+--8<-- "docs/projects/eda/tables/quality_issues.md"
 
-Esses campos nunca são usados como números contínuos sem correção: os quatro
-primeiros problemas caem em colunas já descartadas (tabela abaixo) e o
-código 99 é tratado como categoria, não como número.
+Os dois percentuais acima de 100% são inconsistentes, mas pertencem a
+variáveis de cinco anos que já seriam removidas por estarem depois do
+horizonte do alvo. Crescimento acima de 200% é extremo, porém possível, e
+também usa informação futura. O código 99 é uma categoria válida —
+"Non-Credential Program" — representada por `credential_name`; apenas o
+código redundante é removido. Mensalidade zero pode representar um programa
+gratuito ou subsidiado e, por isso, continua na feature sem ser corrigida
+como erro.
 
-**Colunas descartadas (38 de 72).** Cada coluna foi removida por um destes
-seis motivos. `opeid6` é a única exceção: não é uma feature, mas fica no
-dado só para agrupar o split treino/teste.
+**Colunas excluídas como preditoras (37 de 72).** Cada coluna foi removida
+por um destes sete motivos. Separadamente, `opeid6` não é feature nem coluna
+descartada: permanece apenas para agrupar o split treino/teste.
 
 **1. Identificador ou tem cardinalidade alta demais para virar categoria**
 
@@ -105,7 +108,7 @@ dado só para agrupar o split treino/teste.
 | `cip_code_4digit` | Mesmo curso de `cip_title`, mas perde os zeros à esquerda |
 | `cip_family_code` | Mesmo curso, versão agregada de `cip_title` |
 | `cip_family_title` | Idem, em texto |
-| `credential_level` | Mesmo nível de `credential_name`, mas com o código 99 fora da escala |
+| `credential_level` | Mesmo nível de `credential_name`; o código 99 é a categoria válida "Non-Credential Program" |
 | `median_monthly_payment_usd` | Calculado a partir da dívida mediana, que já está no modelo |
 | `linked_occupations_in_bls` | Redundante com `linked_occupations_count` |
 | `linked_occupations_in_onet` | Idem |
@@ -160,7 +163,7 @@ dado só para agrupar o split treino/teste.
 |---|---|
 | `ai_tool_examples` | Lista de texto aberto, não uma categoria estável |
 
-A lista completa, em código, está em [`DROPPED_COLUMNS`](code/pipeline.py).
+A lista das 37 exclusões, em código, está em [`DROPPED_COLUMNS`](code/pipeline.py).
 Depois desses cortes restam **33 features**: 26 numéricas e 7 categóricas,
 todas listadas no dicionário da seção 1‑A.
 
@@ -170,6 +173,10 @@ O arquivo tem **58.112** linhas com o alvo preenchido. Dessas, tiramos 49
 programas de instituições estrangeiras: eles não têm as mesmas variáveis
 geográficas dos programas americanos e formariam uma população à parte.
 Sobram **58.063** linhas para a análise.
+
+Essa remoção define a população de interesse antes do split; não é uma
+transformação estimada a partir dos dados de teste. O alvo continua sem
+imputação: programas sem renda divulgada não entram na tarefa supervisionada.
 
 | Estatística | Valor |
 |---|---:|
@@ -200,15 +207,18 @@ apareça dos dois lados do split, um critério mais rígido que sortear linha
 por linha, porque instituições repetem muitos atributos entre seus próprios
 cursos.
 
-| | Treino | Teste |
-|---|---:|---:|
-| Programas | 46.323 | 11.740 |
-| Instituições | 3.712 | 928 |
-| Instituições em comum | 0 | 0 |
+--8<-- "docs/projects/eda/tables/split_target_summary.md"
+
+As medianas diferem em apenas **US$ 568 (0,96%)**, sinal de que o alvo ficou
+equilibrado mesmo sem estratificação. Como o alvo é contínuo, priorizamos o
+bloqueio por instituição para evitar vazamento entre grupos. Um split
+temporal não se aplica: o arquivo é um retrato transversal e não possui uma
+data de observação por linha. Há **0 instituições em comum** entre treino e
+teste.
 
 A partir daqui, toda estatística de imputação, todo limite de outlier, toda
-escala e toda categoria "rara" é aprendida **só no treino** e depois
-aplicada ao teste.
+escala e todo agrupamento de categoria rara é aprendido **só no treino** e
+depois aplicado ao teste.
 
 ## 2. Análise univariada
 
@@ -420,7 +430,7 @@ está em [`analysis.py`](code/analysis.py); rode com
 | 1 | Dataset, tarefa e alvo | College Majors 2026; regressão; `median_earnings_4yr_usd` |
 | 2 | Instâncias × features (numéricas / categóricas) | 227.980 × 72 no bruto; 58.063 linhas modeláveis; 33 features (26 / 7) |
 | 3 | Coluna com mais ausentes e percentual | `pct_working_in_state_5yr`: 188.983 (82,90%) |
-| 4 | Colunas descartadas e motivo | 38 colunas: identificadores, redundâncias, vazamento do alvo, informação futura, fórmulas derivadas, texto livre (tabela completa na seção 1‑B) |
+| 4 | Colunas descartadas e motivo | 37 colunas excluídas como preditoras: identificadores, redundâncias, vazamento do alvo, informação futura, fórmulas derivadas, indicadores de disponibilidade e texto livre; `opeid6` fica reservado ao split (seção 1‑B) |
 | 5 | Média e mediana do alvo | US$ 64.887 e US$ 59.011 |
 | 6 | Tamanho de treino e teste | 46.323 e 11.740 programas; 0 instituições em comum |
 | 7 | Par numérico mais correlacionado | emprego da ocupação × aberturas anuais: Spearman ρ = 0,976 |
