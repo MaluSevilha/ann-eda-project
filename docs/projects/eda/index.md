@@ -229,15 +229,34 @@ de cada numérica mantida e do alvo, sempre calculados no treino:
 
 --8<-- "docs/projects/eda/tables/numeric_summary_train.md"
 
-![Histogramas das 11 variáveis numéricas mais relevantes, calculados no treino](figures/fig02_numeric_distributions.png)
+Para manter uma única figura legível, selecionamos o alvo e 11 preditoras
+que representam todos os blocos do problema: renda anterior, dívida, custo,
+seletividade e tamanho institucional, escala do programa, salário,
+crescimento e vagas no mercado de trabalho e exposição à IA. A escolha
+busca diversidade de domínio, escala e formato — não apenas as maiores
+correlações com o alvo. As 27 distribuições continuam cobertas pela tabela
+acima.
+
+![Histogramas do alvo e de 11 preditoras representativas, calculados no treino](figures/fig02_numeric_distributions.png)
 
 **Conclusão da Figura 2.** As escalas e os formatos variam muito de coluna
 para coluna:
 
-- SAT é a única quase simétrica.
-- Matrículas, prêmios (diplomas concedidos), dívida, tamanho de coorte,
-  vagas de emprego e indicadores de IA são todos puxados para a direita.
+- As três flags binárias — `is_main_campus`, `institution_is_hbcu` e
+  `outcomes_shared_across_campuses` — são proporções de 0/1; sua skewness
+  não deve ser interpretada como formato de uma variável contínua.
+- SAT (skew 0,438) e crescimento ocupacional (0,460) são aproximadamente
+  simétricos. Latitude, longitude, tuition out-of-state, crescimento máximo
+  e salário ocupacional têm assimetria moderada (`0,5 ≤ |skew| < 1`).
+- A taxa de admissão tem assimetria negativa forte (−1,282): a massa fica
+  perto das taxas altas e a cauda aponta para instituições mais seletivas.
+- As 16 numéricas restantes têm cauda forte à direita: alvo, renda anterior,
+  matrículas, tuition in-state, diplomas nos dois anos, tamanho da coorte,
+  dívida e número de mutuários, contagem e emprego das ocupações, vagas
+  anuais e os quatro indicadores de IA.
 - `awards_year1` chega a 8.584 contra uma mediana de 33; `institution_undergrad_enrollment` chega a 163.164 contra uma mediana de 5.011,5.
+- Os indicadores de IA são também zero-inflados: suas medianas são zero ou
+  próximas de zero, embora apresentem caudas positivas longas.
 
 Isso sustenta a escolha de winsorização (clipping) e padronização, as duas
 aprendidas só no treino (seção 4‑A).
@@ -246,11 +265,19 @@ aprendidas só no treino (seção 4‑A).
 
 --8<-- "docs/projects/eda/tables/categorical_summary_train.md"
 
+A [tabela completa de frequências](tables/categorical_frequencies_train.md)
+lista as 558 combinações variável–categoria, incluindo `(Ausente)`, com
+contagem e percentual sobre as 46.323 linhas do treino. O marcador de rara
+usa menos de 20 ocorrências, o mesmo limite usado depois pelo
+`OneHotEncoder`.
+
 - `cip_title` (o curso) tem **350 categorias** no treino; **142** delas
   aparecem menos de 20 vezes.
 - `largest_linked_occupation` tem 127 categorias, 32 raras.
-- A ocupação mais comum é "Managers, all other" (13,06%), um rótulo
-  genérico que limita o quanto dá para interpretar essa coluna.
+- Entre os valores observados, a ocupação mais comum é "Managers, all other"
+  (13,06%), um rótulo genérico que limita o quanto dá para interpretar essa
+  coluna. Na tabela completa, o percentual usa todas as linhas, inclusive
+  as 1,45% sem ocupação.
 - As demais categóricas têm cardinalidade baixa a moderada.
 
 ![Frequência das 10 categorias mais comuns em cada uma das 7 variáveis categóricas do modelo](figures/fig03_categorical_frequencies.png)
@@ -267,7 +294,7 @@ grupo "outras", em vez de criar milhares de colunas frágeis.
 
 Usamos correlação de **Spearman**, mais robusta que Pearson às caudas
 longas, outliers e relações não necessariamente lineares vistas na Figura 2.
-Matriz completa: [CSV](tables/spearman_correlation_train.csv).
+Matriz completa: [tabela em Markdown](tables/spearman_correlation_train.md).
 
 - Par mais redundante entre features: emprego total da ocupação × vagas
   anuais abertas, **ρ = 0,976**.
@@ -291,6 +318,19 @@ e em faixas verticais, porque o mesmo número do BLS se repete em muitos
 programas ligados à mesma ocupação.
 
 ### B. Categórica × alvo
+
+Para cobrir as sete categóricas que entram no modelo, a tabela abaixo
+compara os extremos das medianas do alvo. Categorias com menos de 20
+programas ficam fora dos extremos para que um grupo isolado não determine a
+conclusão; `(Ausente)` é mantido como grupo descritivo.
+
+--8<-- "docs/projects/eda/tables/categorical_target_summary_train.md"
+
+As amplitudes mostram que todas as sete variáveis se relacionam com o alvo,
+mas não devem ser comparadas como medida de importância: variáveis com 350
+níveis, como `cip_title`, têm mais oportunidade de produzir extremos do que
+variáveis com três ou quatro níveis. São associações descritivas, não
+efeitos causais.
 
 ![Distribuição do alvo por nível de credencial e por tipo de controle institucional](figures/fig06_categories_target.png)
 
@@ -316,18 +356,30 @@ estudantes de cada grupo impedem uma leitura causal.
 lidera com mediana de **US$ 95.085**, seguida por Computação (**US$
 78.969**). Artes, serviços pessoais e humanidades ficam nas posições mais
 baixas. O campo de estudo é uma fonte forte de variação e deve continuar no
-modelo, com as categorias raras agrupadas.
+modelo, com as categorias raras agrupadas. `cip_family_title` é usado aqui
+somente para tornar a figura legível; a feature efetiva, `cip_title`, está
+coberta na tabela compacta acima.
 
 ### C. Numérica × categórica
+
+Escolhemos os dois pares por relevância substantiva, baixa cardinalidade
+para leitura e capacidade de mostrar posição e dispersão no mesmo gráfico.
+Tuition × controle institucional compara diretamente regimes de preço;
+salário ocupacional × credencial conecta formação ao mercado de trabalho
+sem repetir a relação categórica × alvo da seção anterior. Os boxplots usam
+todo o treino, não uma amostra.
 
 ![Mensalidade in-state por tipo de instituição, e salário da ocupação associada por nível de credencial](figures/fig08_numeric_categorical.png)
 
 **Conclusão da Figura 8.** Instituições privadas sem fins lucrativos cobram
-mensalidades mais altas e mais dispersas. O salário da ocupação associada
-também muda de posição e de dispersão conforme a credencial, principalmente
-nos diplomas profissionais. Padronizar as escalas é necessário, mas não
-apaga essas diferenças estruturais entre grupos: o modelo ainda vai
-"ver" essa variação.
+mensalidade mediana de **US$ 42.050** (IQR US$ 30.480–57.056), acima das
+privadas com fins lucrativos (**US$ 15.120**) e das públicas (**US$ 9.186**;
+IQR US$ 5.997–12.762), além de serem mais dispersas. O salário da ocupação
+associada também muda de posição: a mediana vai de **US$ 59.810** nos
+certificados de graduação a **US$ 134.830** no primeiro diploma
+profissional. Logo, os grupos diferem em posição e dispersão. Padronizar as
+escalas é necessário, mas não apaga essas diferenças estruturais: o modelo
+ainda vai "ver" essa variação.
 
 ## 4. Pré-processamento
 

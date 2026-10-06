@@ -51,6 +51,7 @@ from pipeline import (  # noqa: E402
 RANDOM_STATE = 42
 TEST_SIZE = 0.20
 PROJECTION_SAMPLE = 3000
+RARE_CATEGORY_MIN_COUNT = 20
 DATA_DICTIONARY_PATH = TABLE_DIR / "data_dictionary.md"
 
 
@@ -112,11 +113,11 @@ def save_figure(fig: plt.Figure, filename: str) -> None:
     plt.close(fig)
 
 
-def save_table(df: pd.DataFrame, filename: str) -> None:
+def save_table(df: pd.DataFrame, filename: str, *, index: bool = True) -> None:
     TABLE_DIR.mkdir(parents=True, exist_ok=True)
-    df.to_csv(TABLE_DIR / filename, index=True)
+    df.to_csv(TABLE_DIR / filename, index=index)
     (TABLE_DIR / Path(filename).with_suffix(".md")).write_text(
-        df.round(3).to_markdown(), encoding="utf-8"
+        df.round(3).to_markdown(index=index), encoding="utf-8"
     )
 
 
@@ -152,16 +153,21 @@ def numeric_univariate_figure(train: pd.DataFrame) -> None:
         "institution_avg_sat",
         "institution_admission_rate",
         "institution_undergrad_enrollment",
-        "awards_year2",
+        "awards_year1",
         "occupation_median_wage_2024_usd",
         "occupation_growth_pct_2024_34",
         "occupation_annual_openings_thousands",
         "ai_software_occupation_share",
     ]
     fig, axes = plt.subplots(3, 4, figsize=(17, 11))
-    abbreviate = matplotlib.ticker.FuncFormatter(
-        lambda x, _: f"{x/1000:.0f}k" if abs(x) >= 1000 else f"{x:.0f}"
-    )
+    def readable_number(x, _):
+        if abs(x) >= 1000:
+            return f"{x / 1000:.1f}k".replace(".0k", "k")
+        if 0 < abs(x) < 1:
+            return f"{x:.2g}"
+        return f"{x:.0f}"
+
+    abbreviate = matplotlib.ticker.FuncFormatter(readable_number)
     for ax, col in zip(axes.flat, selected):
         sns.histplot(train[col], bins=35, ax=ax, color="#2166ac")
         ax.set_title(col.replace("_", " "), fontsize=9)
@@ -179,7 +185,7 @@ def categorical_univariate_figure(train: pd.DataFrame) -> None:
     columns = CATEGORICAL_FEATURES  # as 7 categóricas que entram no modelo
     fig, axes = plt.subplots(4, 2, figsize=(16, 20))
     for ax, col in zip(axes.flat, columns):
-        counts = train[col].fillna("Ausente").value_counts().head(10).sort_values()
+        counts = train[col].astype("string").fillna("(Ausente)").value_counts().head(10).sort_values()
         ax.barh(counts.index.astype(str), counts.values, color="#4393c3")
         ax.set_title(col.replace("_", " "), fontsize=10)
         ax.set_xlabel("Programas no treino")
@@ -188,6 +194,60 @@ def categorical_univariate_figure(train: pd.DataFrame) -> None:
     fig.suptitle("Figura 3: Categorias mais frequentes (treino)", fontweight="bold", y=1.002)
     fig.tight_layout()
     save_figure(fig, "fig03_categorical_frequencies.png")
+
+
+def categorical_frequency_table(train: pd.DataFrame) -> None:
+    """Salva contagem e percentual de cada nível das sete categóricas."""
+    frames = []
+    for column in CATEGORICAL_FEATURES:
+        values = train[column].astype("string").fillna("(Ausente)")
+        counts = values.value_counts(dropna=False).rename_axis("categoria").reset_index(name="contagem")
+        counts = counts.sort_values(
+            ["contagem", "categoria"], ascending=[False, True], kind="stable"
+        )
+        counts.insert(0, "variável", column)
+        counts["percentual"] = counts["contagem"] / len(train) * 100
+        counts["rara (<20)"] = counts["contagem"] < RARE_CATEGORY_MIN_COUNT
+        frames.append(counts)
+    frequencies = pd.concat(frames, ignore_index=True)
+    totals = frequencies.groupby("variável", sort=False)["contagem"].sum()
+    percentages = frequencies.groupby("variável", sort=False)["percentual"].sum()
+    if not (totals.eq(len(train)).all() and np.allclose(percentages, 100.0)):
+        raise RuntimeError("Frequências categóricas não fecham o total do treino")
+    save_table(frequencies, "categorical_frequencies_train.csv", index=False)
+
+
+def categorical_target_summary(train: pd.DataFrame) -> None:
+    """Resume os extremos do alvo em categorias com suporte suficiente."""
+    rows = []
+    for column in CATEGORICAL_FEATURES:
+        values = train[column].astype("string").fillna("(Ausente)")
+        grouped = (
+            pd.DataFrame({"categoria": values, TARGET: train[TARGET]})
+            .groupby("categoria", as_index=False)[TARGET]
+            .agg(n="size", mediana="median")
+        )
+        eligible = grouped.loc[grouped["n"] >= RARE_CATEGORY_MIN_COUNT].copy()
+        lowest = eligible.sort_values(["mediana", "categoria"], ascending=[True, True]).iloc[0]
+        highest = eligible.sort_values(["mediana", "categoria"], ascending=[False, True]).iloc[0]
+        rows.append(
+            {
+                "variável": column,
+                "categorias (com ausente)": len(grouped),
+                "categorias n≥20": len(eligible),
+                "menor mediana": lowest["categoria"],
+                "n menor": int(lowest["n"]),
+                "mediana menor (US$)": float(lowest["mediana"]),
+                "maior mediana": highest["categoria"],
+                "n maior": int(highest["n"]),
+                "mediana maior (US$)": float(highest["mediana"]),
+                "amplitude (US$)": float(highest["mediana"] - lowest["mediana"]),
+            }
+        )
+    summary = pd.DataFrame(rows).set_index("variável")
+    if list(summary.index) != CATEGORICAL_FEATURES:
+        raise RuntimeError("Resumo categórica × alvo não cobre as sete features na ordem esperada")
+    save_table(summary, "categorical_target_summary_train.csv")
 
 
 def correlation_figures(train: pd.DataFrame, corr: pd.DataFrame) -> None:
@@ -275,13 +335,12 @@ def categorical_target_figures(train: pd.DataFrame) -> None:
 
 
 def numeric_categorical_figure(train: pd.DataFrame) -> None:
-    sample = train.sample(min(12000, len(train)), random_state=RANDOM_STATE)
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    sns.boxplot(data=sample, y="institution_control", x="institution_tuition_in_state_usd", showfliers=False, ax=axes[0], color="#ef8a62")
+    sns.boxplot(data=train, y="institution_control", x="institution_tuition_in_state_usd", showfliers=False, ax=axes[0], color="#ef8a62")
     axes[0].set(xlabel="Mensalidade anual in-state (US$)", ylabel="Controle institucional")
     compact_money_axis(axes[0])
     axes[0].xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(5))
-    sns.boxplot(data=sample, y="credential_name", x="occupation_median_wage_2024_usd", showfliers=False, ax=axes[1], color="#67a9cf")
+    sns.boxplot(data=train, y="credential_name", x="occupation_median_wage_2024_usd", showfliers=False, ax=axes[1], color="#67a9cf")
     axes[1].set(xlabel="Salário da ocupação associada (US$)", ylabel="Credencial")
     compact_money_axis(axes[1])
     axes[1].xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(5))
@@ -429,17 +488,17 @@ def main() -> None:
     numeric_stats = numeric_stats[["count", "missing_pct", "mean", "median", "std", "min", "25%", "75%", "max", "skew"]]
     save_table(numeric_stats, "numeric_summary_train.csv")
 
-    categorical_source = CATEGORICAL_FEATURES + ["cip_family_title"]
     categorical_summary = pd.DataFrame(
         {
-            "cardinalidade": train[categorical_source].nunique(dropna=True),
-            "ausentes_pct": train[categorical_source].isna().mean() * 100,
-            "categoria_mais_frequente": [train[c].mode(dropna=True).iloc[0] for c in categorical_source],
-            "frequencia_max_pct": [train[c].value_counts(normalize=True, dropna=True).iloc[0] * 100 for c in categorical_source],
-            "categorias_raras_lt20": [int((train[c].value_counts() < 20).sum()) for c in categorical_source],
+            "cardinalidade": train[CATEGORICAL_FEATURES].nunique(dropna=True),
+            "ausentes_pct": train[CATEGORICAL_FEATURES].isna().mean() * 100,
+            "categoria_mais_frequente": [train[c].mode(dropna=True).iloc[0] for c in CATEGORICAL_FEATURES],
+            "frequencia_max_pct": [train[c].value_counts(normalize=True, dropna=True).iloc[0] * 100 for c in CATEGORICAL_FEATURES],
+            "categorias_raras_lt20": [int((train[c].value_counts() < RARE_CATEGORY_MIN_COUNT).sum()) for c in CATEGORICAL_FEATURES],
         }
     )
     save_table(categorical_summary, "categorical_summary_train.csv")
+    categorical_frequency_table(train)
     numeric_univariate_figure(train)
     categorical_univariate_figure(train)
 
@@ -453,6 +512,7 @@ def main() -> None:
     corr_target = corr[TARGET].drop(TARGET).sort_values(key=lambda s: s.abs(), ascending=False)
     save_table(corr_target.to_frame("spearman_com_alvo"), "target_correlations_train.csv")
     correlation_figures(train, corr)
+    categorical_target_summary(train)
     categorical_target_figures(train)
     numeric_categorical_figure(train)
 
@@ -467,7 +527,7 @@ def main() -> None:
 
     X_train = train[MODEL_FEATURES]
     X_test = test[MODEL_FEATURES]
-    preprocess = build_preprocessor(min_category_frequency=20)
+    preprocess = build_preprocessor(min_category_frequency=RARE_CATEGORY_MIN_COUNT)
     X_train_t = preprocess.fit_transform(X_train)
     X_test_t = preprocess.transform(X_test)
     feature_names = preprocess.get_feature_names_out()
