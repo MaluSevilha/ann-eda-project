@@ -15,9 +15,8 @@ ai_use: "OpenAI Codex e Anthropic ClaudeCode foram usados no sketch do codigo, e
 
 Este projeto prepara uma tarefa de **regressão**. O objetivo é prever
 `median_earnings_4yr_usd`: a renda anual mediana de concluintes, medida 4 anos
-depois da conclusão do curso. Cada linha da base é um **programa**: a
-combinação de uma instituição, um curso (código CIP) e um nível de
-credencial, não uma pessoa.
+depois da conclusão do curso. Cada granularidade observada na base é de um **programa**: combinação de uma instituição, um curso (código CIP) e um nível de
+credencial.
 
 - **Dataset:** [College Majors 2026: Earnings, Debt, Jobs, AI](https://www.kaggle.com/datasets/kylefengkfeng209/college-majors-2026-earnings-debt-jobs-ai), do Kaggle.
 - **Tamanho:** 227.980 linhas × 72 colunas.
@@ -27,34 +26,32 @@ credencial, não uma pessoa.
   e a [atualização oficial de 2026](https://fsapartners.ed.gov/fsa-print/publication/1006843),
   que define a medição quatro anos após a graduação.
 - **Motivação:** entender quanto o curso, a instituição, a ocupação associada e a exposição a tecnologias de IA ajudam a explicar o resultado financeiro do ex-aluno.
-- **Primeiro risco:** o alvo não está disponível para todo mundo. **169.868 linhas (74,51%)** não têm `median_earnings_4yr_usd`, principalmente porque o governo americano suprime esse número quando a turma é pequena demais (regra de privacidade).
+- **Primeiro risco:** o alvo não está disponível para todo mundo. **169.868 linhas (74,51%)** não têm `median_earnings_4yr_usd`, principalmente porque o governo americano suprime esse número quando a turma é pequena demais (dado uma regra de privacidade).
 
-O escopo desta entrega termina no pré-processamento. **Nenhum modelo foi
-treinado**, conforme o enunciado.
+O escopo desta entrega termina no pré-processamento. Ou seja, **nenhum modelo foi
+treinado**.
 
 ## 1. Inspeção inicial
 
 ### A. Dicionário de dados
 
-`program_id` é a chave da tabela: tem **227.980 valores únicos**, sem
+A coluna `program_id` representa o id da tabela: tem **227.980 valores únicos**, sem
 nenhum ausente. A tabela abaixo cobre as **72 colunas** do arquivo: 33
 features do modelo, o alvo, `opeid6` (usado só para separar treino/teste) e
-37 colunas excluídas como preditoras. Para cada uma, registra fonte, papel,
+37 colunas excluídas como preditoras. Para cada uma, registra-se a fonte, papel,
 tipo semântico, unidade, significado e decisão de uso.
 
 Algumas descrições são inferidas a partir do nome da coluna e da fonte
 (College Scorecard, BLS, O\*NET), pois o Kaggle não distribui um codebook
-oficial completo. Por isso, o time evita qualquer leitura causal, só
-associação.
+oficial completo.
 
 --8<-- "docs/projects/eda/tables/data_dictionary.md"
 
 ### B. Qualidade
 
-**Duplicidade.** Não há linhas totalmente duplicadas nem `program_id`
-repetido: a chave é confiável.
+Não há linhas totalmente duplicadas nem `program_id` repetido: **a chave é confiável**.
 
-**Valores ausentes.** A ausência é grande e **não é aleatória**: os campos
+Já quanto a ausência de dados, essa é grande e **não é aleatória**: os campos
 de renda e dívida vêm acompanhados de flags como `earnings_4yr_status =
 privacy_suppressed`, ou seja, faltam por uma regra conhecida (turma
 pequena), não por acaso. As colunas com mais buracos:
@@ -70,9 +67,9 @@ pequena), não por acaso. As colunas com mais buracos:
 | `debt_to_earnings_4yr` | 184.605 | 80,97 |
 | `median_debt_usd` | 181.307 | 79,53 |
 
-[Tabela completa de valores ausentes — contagem e percentual das 72 colunas](tables/missing_values.md).
+[Tabela completa de valores ausentes com a contagem e percentual das 72 colunas](tables/missing_values.md).
 
-**Valores inconsistentes, extremos ou especiais.** Os cinco casos abaixo
+Já quanto a valores inconsistentes, extremos ou especiais, os cinco casos abaixo
 foram quantificados separando impossibilidades matemáticas de valores apenas
 raros ou categorias válidas:
 
@@ -81,15 +78,13 @@ raros ou categorias válidas:
 Os dois percentuais acima de 100% são inconsistentes, mas pertencem a
 variáveis de cinco anos que já seriam removidas por estarem depois do
 horizonte do alvo. Crescimento acima de 200% é extremo, porém possível, e
-também usa informação futura. O código 99 é uma categoria válida —
-"Non-Credential Program" — representada por `credential_name`; apenas o
-código redundante é removido. Mensalidade zero pode representar um programa
-gratuito ou subsidiado e, por isso, continua na feature sem ser corrigida
-como erro.
+também usa informação futura. O código 99 é uma categoria válida ("Non-Credential Program") representada por `credential_name`. Apenas o código redundante é removido. 
 
-**Colunas excluídas como preditoras (37 de 72).** Cada coluna foi removida
-por um destes sete motivos. Separadamente, `opeid6` não é feature nem coluna
-descartada: permanece apenas para agrupar o split treino/teste.
+Mensalidade zero pode representar um programa gratuito ou subsidiado e, por isso, continua na feature sem ser tratada como erro.
+
+37 de 72 colunas foram excluídas como preditoras. Cada coluna foi removida
+por dos sete motivos descritos abaixo. Separadamente, `opeid6` não é feature nem coluna
+descartada: permanece apenas para agrupar o split de treino e teste.
 
 **1. Identificador ou tem cardinalidade alta demais para virar categoria**
 
@@ -107,11 +102,11 @@ descartada: permanece apenas para agrupar o split treino/teste.
 | `institution_region` | Já coberto por `institution_state` |
 | `cip_code_4digit` | Mesmo curso de `cip_title`, mas perde os zeros à esquerda |
 | `cip_family_code` | Mesmo curso, versão agregada de `cip_title` |
-| `cip_family_title` | Idem, em texto |
-| `credential_level` | Mesmo nível de `credential_name`; o código 99 é a categoria válida "Non-Credential Program" |
+| `cip_family_title` | Mesmo curso de `cip_title`, mas em texto |
+| `credential_level` | Mesmo nível de `credential_name` com o código 99 é a categoria válida "Non-Credential Program" |
 | `median_monthly_payment_usd` | Calculado a partir da dívida mediana, que já está no modelo |
 | `linked_occupations_in_bls` | Redundante com `linked_occupations_count` |
-| `linked_occupations_in_onet` | Idem |
+| `linked_occupations_in_onet` | Redundante com `linked_occupations_count`  |
 | `largest_linked_occupation_soc` | Código da mesma ocupação que `largest_linked_occupation` já nomeia |
 | `occupations_using_ai_software` | Redundante com a proporção equivalente já usada |
 
@@ -122,8 +117,8 @@ descartada: permanece apenas para agrupar o split treino/teste.
 | `earnings_4yr_status` | É o próprio indicador de "o alvo existe ou foi suprimido" |
 | `earnings_cohort_size_4yr` | Tamanho da turma medida junto com o alvo |
 | `national_median_earnings_4yr_usd` | Agregado calculado sobre o alvo |
-| `national_p25_earnings_4yr_usd` | Idem |
-| `national_p75_earnings_4yr_usd` | Idem |
+| `national_p25_earnings_4yr_usd` |  Agregado calculado sobre o alvo  |
+| `national_p75_earnings_4yr_usd` |  Agregado calculado sobre o alvo  |
 | `earnings_vs_national_pct` | Fórmula direta: alvo ÷ mediana nacional |
 | `debt_to_earnings_4yr` | Fórmula direta: dívida ÷ alvo |
 
@@ -135,11 +130,11 @@ descartada: permanece apenas para agrupar o split treino/teste.
 | `earnings_cohort_size_5yr` | Turma do dado de 5 anos |
 | `earnings_5yr_status` | Status do dado de 5 anos |
 | `not_working_count_5yr` | Medido junto com o dado de 5 anos |
-| `count_above_hs_threshold_5yr` | Idem |
-| `count_working_in_state_5yr` | Idem |
-| `pct_above_hs_threshold_5yr` | Idem |
-| `pct_working_5yr` | Idem |
-| `pct_working_in_state_5yr` | Idem |
+| `count_above_hs_threshold_5yr` | Medido junto com o dado de 5 anos |
+| `count_working_in_state_5yr` | Medido junto com o dado de 5 anos |
+| `pct_above_hs_threshold_5yr` | Medido junto com o dado de 5 anos |
+| `pct_working_5yr` | Medido junto com o dado de 5 anos |
+| `pct_working_in_state_5yr` | Medido junto com o dado de 5 anos |
 | `earnings_growth_pct_1yr_to_5yr` | Compara o ano 1 com o ano 5 |
 | `earnings_trajectory_category` | Categoria calculada sobre esse crescimento |
 
@@ -147,10 +142,10 @@ descartada: permanece apenas para agrupar o split treino/teste.
 
 | Coluna | Por quê |
 |---|---|
-| `debt_to_earnings_1yr` | Dívida ÷ renda de 1 ano; as duas partes já entram separadas |
+| `debt_to_earnings_1yr` | Dívida ÷ renda de 1 ano (as duas partes já entram separadas) |
 | `payment_to_income_pct_1yr` | Parcela mensal ÷ renda de 1 ano, mesma lógica |
 
-**6. A ausência já vira um indicador; a categoria em si não ajuda mais**
+**6. A ausência já vira um indicador, a categoria em si não ajuda mais**
 
 | Coluna | Por quê |
 |---|---|
@@ -169,13 +164,12 @@ todas listadas no dicionário da seção 1‑A.
 
 ### C. Alvo de regressão
 
-O arquivo tem **58.112** linhas com o alvo preenchido. Dessas, tiramos 49
+O arquivo tem **58.112** linhas com o alvo preenchido. Dessas, tiram-se 49
 programas de instituições estrangeiras: eles não têm as mesmas variáveis
 geográficas dos programas americanos e formariam uma população à parte.
 Sobram **58.063** linhas para a análise.
 
-Essa remoção define a população de interesse antes do split; não é uma
-transformação estimada a partir dos dados de teste. O alvo continua sem
+Essa remoção define a população de interesse antes do split. O alvo continua sem
 imputação: programas sem renda divulgada não entram na tarefa supervisionada.
 
 | Estatística | Valor |
@@ -189,19 +183,19 @@ imputação: programas sem renda divulgada não entram na tarefa supervisionada.
 
 ![Histograma e boxplot da renda mediana no 4º ano, com mediana e média marcadas](figures/fig01_target.png)
 
-**Conclusão da Figura 1.** O alvo puxa para a direita: tem muitos valores
+O alvo é assimétrico à direita: tem muitos valores
 extremos altos e a média (US$ 64.887) fica acima da mediana (US$ 59.011).
-Na futura rede, vale comparar a escala original com `log1p(y)`, mas sempre
+Na futura rede, vale comparar a escala original com `log1p(y)`,
 reportando o erro final também em dólares, para manter a interpretação.
 
-> Nota: o skew de **1,755** acima usa as 58.063 linhas domésticas inteiras.
+> O *skew* de **1,755** acima usa as 58.063 linhas domésticas inteiras.
 > Na tabela da seção 2‑A, calculada só com o treino (46.323 linhas), o
 > mesmo alvo aparece com skew **1,689**: os dois valores estão certos,
 > apenas descrevem populações ligeiramente diferentes.
 
 ### D. Treino e teste
 
-Dividimos com `GroupShuffleSplit(test_size=0.20, random_state=42)`,
+Divide-se a base de dados com `GroupShuffleSplit(test_size=0.20, random_state=42)`,
 agrupando por `opeid6` (a instituição). Isso evita que a mesma instituição
 apareça dos dois lados do split, um critério mais rígido que sortear linha
 por linha, porque instituições repetem muitos atributos entre seus próprios
@@ -210,7 +204,7 @@ cursos.
 --8<-- "docs/projects/eda/tables/split_target_summary.md"
 
 As medianas diferem em apenas **US$ 568 (0,96%)**, sinal de que o alvo ficou
-equilibrado mesmo sem estratificação. Como o alvo é contínuo, priorizamos o
+equilibrado mesmo sem estratificação. Como o alvo é contínuo, prioriza-se o
 bloqueio por instituição para evitar vazamento entre grupos. Um split
 temporal não se aplica: o arquivo é um retrato transversal e não possui uma
 data de observação por linha. Há **0 instituições em comum** entre treino e
@@ -229,23 +223,23 @@ de cada numérica mantida e do alvo, sempre calculados no treino:
 
 --8<-- "docs/projects/eda/tables/numeric_summary_train.md"
 
-Para manter uma única figura legível, selecionamos o alvo e 11 preditoras
+Para manter uma única figura legível, seleciona-se o alvo e 11 preditoras
 que representam todos os blocos do problema: renda anterior, dívida, custo,
 seletividade e tamanho institucional, escala do programa, salário,
 crescimento e vagas no mercado de trabalho e exposição à IA. A escolha
-busca diversidade de domínio, escala e formato — não apenas as maiores
+busca diversidade de domínio, escala e formato e não apenas as maiores
 correlações com o alvo. As 27 distribuições continuam cobertas pela tabela
 acima.
 
 ![Histogramas do alvo e de 11 preditoras representativas, calculados no treino](figures/fig02_numeric_distributions.png)
 
-**Conclusão da Figura 2.** As escalas e os formatos variam muito de coluna
+As escalas e os formatos variam muito de coluna
 para coluna:
 
-- As três flags binárias — `is_main_campus`, `institution_is_hbcu` e
-  `outcomes_shared_across_campuses` — são proporções de 0/1; sua skewness
+- As três flags binárias (`is_main_campus`, `institution_is_hbcu` e
+  `outcomes_shared_across_campuses`) são proporções de 0/1 e sua *skewness*
   não deve ser interpretada como formato de uma variável contínua.
-- SAT (skew 0,438) e crescimento ocupacional (0,460) são aproximadamente
+- SAT (*skew* 0,438) e crescimento ocupacional (0,460) são aproximadamente
   simétricos. Latitude, longitude, tuition out-of-state, crescimento máximo
   e salário ocupacional têm assimetria moderada (`0,5 ≤ |skew| < 1`).
 - A taxa de admissão tem assimetria negativa forte (−1,282): a massa fica
@@ -254,7 +248,7 @@ para coluna:
   matrículas, tuition in-state, diplomas nos dois anos, tamanho da coorte,
   dívida e número de mutuários, contagem e emprego das ocupações, vagas
   anuais e os quatro indicadores de IA.
-- `awards_year1` chega a 8.584 contra uma mediana de 33; `institution_undergrad_enrollment` chega a 163.164 contra uma mediana de 5.011,5.
+- `awards_year1` chega a 8.584 contra uma mediana de 33 e `institution_undergrad_enrollment` chega a 163.164 contra uma mediana de 5.011,5.
 - Os indicadores de IA são também zero-inflados: suas medianas são zero ou
   próximas de zero, embora apresentem caudas positivas longas.
 
@@ -282,7 +276,7 @@ usa menos de 20 ocorrências, o mesmo limite usado depois pelo
 
 ![Frequência das 10 categorias mais comuns em cada uma das 7 variáveis categóricas do modelo](figures/fig03_categorical_frequencies.png)
 
-**Conclusão da Figura 3.** Instituições públicas, bacharelados e cursos
+Instituições públicas, bacharelados e cursos
 presenciais dominam o dataset. `cip_title` (curso) e `largest_linked_occupation`
 (ocupação) têm cauda longa: poucas categorias grandes e muitas pequenas.
 Por isso o one-hot encoding (seção 4‑A) agrupa as categorias raras em um

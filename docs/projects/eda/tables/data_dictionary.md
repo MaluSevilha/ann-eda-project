@@ -72,5 +72,3 @@
 | `earnings_1yr_status` | Derivada do College Scorecard | Indicador de disponibilidade | Categórica nominal | Status | Indica se a renda de um ano foi divulgada ou suprimida. | Excluir: a ausência já é representada pelo imputador. |
 | `earnings_5yr_status` | Derivada do College Scorecard | Indicador de disponibilidade | Categórica nominal | Status | Indica se a renda de cinco anos foi divulgada ou suprimida. | Excluir: informação posterior ao alvo. |
 | `debt_status` | Derivada do College Scorecard | Indicador de disponibilidade | Categórica nominal | Status | Indica se a dívida mediana foi divulgada ou suprimida. | Excluir: a ausência já é representada pelo imputador. |
-
-**Leitura da tabela.** Cada linha do arquivo representa um programa — a combinação de instituição, área de estudo (CIP) e nível de credencial —, não uma pessoa. A classificação fecha exatamente as 72 colunas: 33 preditoras, um alvo, um identificador reservado ao split e 37 colunas excluídas. As descrições das variáveis compostas foram inferidas do nome e das fontes declaradas pelo produtor quando não havia definição individual no data card; por isso, a análise é associativa, não causal.
