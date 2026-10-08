@@ -13,6 +13,7 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python download_data.py
 python docs/projects/eda/code/analysis.py
+mkdocs build --strict
 mkdocs serve
 ```
 

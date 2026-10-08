@@ -441,7 +441,7 @@ efeitos colaterais). Depois de transformar treino e teste:
 | Shape do teste | (11.740, 431) |
 | `NaN` nas duas matrizes | 0 |
 | Categoria nunca vista no teste | tratada sem erro, mesma largura final |
-| Nomes das 431 colunas finais | [pipeline_feature_names.csv](tables/pipeline_feature_names.csv) |
+| Nomes das 431 colunas finais | [pipeline_feature_names.md](tables/pipeline_feature_names.md) |
 
 O script que reproduz split, tabelas, figuras, projeções e essas checagens
 está em [`analysis.py`](code/analysis.py); rode com

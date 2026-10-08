@@ -533,12 +533,37 @@ def main() -> None:
     feature_names = preprocess.get_feature_names_out()
     nan_train = int(np.isnan(X_train_t.data).sum() if hasattr(X_train_t, "data") else np.isnan(X_train_t).sum())
     nan_test = int(np.isnan(X_test_t.data).sum() if hasattr(X_test_t, "data") else np.isnan(X_test_t).sum())
-    pd.Series(feature_names, name="feature").to_csv(TABLE_DIR / "pipeline_feature_names.csv", index=False)
 
     unseen = X_test.iloc[[0]].copy()
     unseen["institution_control"] = "Categoria nunca vista"
     unseen_t = preprocess.transform(unseen)
     unseen_ok = unseen_t.shape[1] == X_train_t.shape[1]
+
+    pipeline_errors = []
+    if nan_train or nan_test:
+        pipeline_errors.append(f"NaN no treino={nan_train}, teste={nan_test}")
+    if X_train_t.shape[1] != X_test_t.shape[1]:
+        pipeline_errors.append(
+            f"larguras diferentes: treino={X_train_t.shape[1]}, teste={X_test_t.shape[1]}"
+        )
+    if len(feature_names) != X_train_t.shape[1]:
+        pipeline_errors.append(
+            f"nomes={len(feature_names)}, colunas transformadas={X_train_t.shape[1]}"
+        )
+    if len(set(feature_names)) != len(feature_names):
+        pipeline_errors.append("nomes de features duplicados")
+    if not unseen_ok:
+        pipeline_errors.append(
+            f"categoria inédita alterou a largura para {unseen_t.shape[1]}"
+        )
+    if pipeline_errors:
+        raise RuntimeError("Pipeline inválido: " + "; ".join(pipeline_errors))
+
+    save_table(
+        pd.DataFrame({"feature": feature_names}),
+        "pipeline_feature_names.csv",
+        index=False,
+    )
 
     rng = np.random.default_rng(RANDOM_STATE)
     sample_positions = rng.choice(len(train), size=min(PROJECTION_SAMPLE, len(train)), replace=False)
