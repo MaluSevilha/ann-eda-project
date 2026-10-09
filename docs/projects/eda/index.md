@@ -3,7 +3,6 @@ project: eda
 task: regression
 dataset: https://www.kaggle.com/datasets/kylefengkfeng209/college-majors-2026-earnings-debt-jobs-ai
 team:
-  - Henrique Puppi
   - Maria Luiza Sevilha
   - Vinicus Barreto Pomilio
 ai_use: "OpenAI Codex e Anthropic ClaudeCode foram usados no sketch do codigo, estrutura e na primeira versão do texto; a equipe revisou e é responsável por explicar as decisões."
@@ -13,10 +12,7 @@ ai_use: "OpenAI Codex e Anthropic ClaudeCode foram usados no sketch do codigo, e
 
 ## 0. Proposta
 
-Este projeto prepara uma tarefa de **regressão**. O objetivo é prever
-`median_earnings_4yr_usd`: a renda anual mediana de concluintes, medida 4 anos
-depois da conclusão do curso. Cada granularidade observada na base é de um **programa**: combinação de uma instituição, um curso (código CIP) e um nível de
-credencial.
+Este projeto prepara uma tarefa de **regressão**. O objetivo é prever `median_earnings_4yr_usd`: a renda anual mediana de concluintes, medida 4 anos depois da conclusão do curso. Cada granularidade observada na base é de um **programa**: combinação de uma instituição, um curso (código CIP) e um nível de credencial.
 
 - **Dataset:** [College Majors 2026: Earnings, Debt, Jobs, AI](https://www.kaggle.com/datasets/kylefengkfeng209/college-majors-2026-earnings-debt-jobs-ai), do Kaggle.
 - **Tamanho:** 227.980 linhas × 72 colunas.
@@ -35,15 +31,9 @@ treinado**.
 
 ### A. Dicionário de dados
 
-A coluna `program_id` representa o id da tabela: tem **227.980 valores únicos**, sem
-nenhum ausente. A tabela abaixo cobre as **72 colunas** do arquivo: 33
-features do modelo, o alvo, `opeid6` (usado só para separar treino/teste) e
-37 colunas excluídas como preditoras. Para cada uma, registra-se a fonte, papel,
-tipo semântico, unidade, significado e decisão de uso.
+A coluna `program_id` representa o id da tabela: tem **227.980 valores únicos**, sem nenhum ausente. A tabela abaixo cobre as **72 colunas** do arquivo: 33 features do modelo, o alvo, `opeid6` (usado só para separar treino/teste) e 37 colunas excluídas como preditoras. Para cada uma, registra-se a fonte, papel, tipo semântico, unidade, significado e decisão de uso.
 
-Algumas descrições são inferidas a partir do nome da coluna e da fonte
-(College Scorecard, BLS, O\*NET), pois o Kaggle não distribui um codebook
-oficial completo.
+Algumas descrições são inferidas a partir do nome da coluna e da fonte (College Scorecard, BLS, O\*NET), pois o Kaggle não distribui um codebook oficial completo.
 
 --8<-- "docs/projects/eda/tables/data_dictionary.md"
 
@@ -51,10 +41,7 @@ oficial completo.
 
 Não há linhas totalmente duplicadas nem `program_id` repetido: **a chave é confiável**.
 
-Já quanto a ausência de dados, essa é grande e **não é aleatória**: os campos
-de renda e dívida vêm acompanhados de flags como `earnings_4yr_status =
-privacy_suppressed`, ou seja, faltam por uma regra conhecida (turma
-pequena), não por acaso. As colunas com mais buracos:
+Já quanto a ausência de dados, essa é grande e **não é aleatória**: os campos de renda e dívida vêm acompanhados de flags como `earnings_4yr_status = privacy_suppressed`, ou seja, faltam por uma regra conhecida (turma pequena), não por acaso. As colunas com mais buracos:
 
 | Coluna | Ausentes | % |
 |---|---:|---:|
@@ -69,22 +56,15 @@ pequena), não por acaso. As colunas com mais buracos:
 
 [Tabela completa de valores ausentes com a contagem e percentual das 72 colunas](tables/missing_values.md).
 
-Já quanto a valores inconsistentes, extremos ou especiais, os cinco casos abaixo
-foram quantificados separando impossibilidades matemáticas de valores apenas
-raros ou categorias válidas:
+Já quanto a valores inconsistentes, extremos ou especiais, os cinco casos abaixo foram quantificados separando impossibilidades matemáticas de valores apenas raros ou categorias válidas:
 
 --8<-- "docs/projects/eda/tables/quality_issues.md"
 
-Os dois percentuais acima de 100% são inconsistentes, mas pertencem a
-variáveis de cinco anos que já seriam removidas por estarem depois do
-horizonte do alvo. Crescimento acima de 200% é extremo, porém possível, e
-também usa informação futura. O código 99 é uma categoria válida ("Non-Credential Program") representada por `credential_name`. Apenas o código redundante é removido. 
+Os dois percentuais acima de 100% são inconsistentes, mas pertencem a variáveis de cinco anos que já seriam removidas por estarem depois do horizonte do alvo. Crescimento acima de 200% é extremo, porém possível, e também usa informação futura. O código 99 é uma categoria válida ("Non-Credential Program") representada por `credential_name`. Apenas o código redundante é removido. 
 
 Mensalidade zero pode representar um programa gratuito ou subsidiado e, por isso, continua na feature sem ser tratada como erro.
 
-37 de 72 colunas foram excluídas como preditoras. Cada coluna foi removida
-por dos sete motivos descritos abaixo. Separadamente, `opeid6` não é feature nem coluna
-descartada: permanece apenas para agrupar o split de treino e teste.
+37 de 72 colunas foram excluídas como preditoras. Cada coluna foi removida por dos sete motivos descritos abaixo. Separadamente, `opeid6` não é feature nem coluna descartada: permanece apenas para agrupar o split de treino e teste.
 
 **1. Identificador ou tem cardinalidade alta demais para virar categoria**
 
@@ -113,7 +93,7 @@ descartada: permanece apenas para agrupar o split de treino e teste.
 **3. Vazamento direto: usa o valor do alvo para existir**
 
 | Coluna | Por quê |
-|---|---|
+|--------|---------|
 | `earnings_4yr_status` | É o próprio indicador de "o alvo existe ou foi suprimido" |
 | `earnings_cohort_size_4yr` | Tamanho da turma medida junto com o alvo |
 | `national_median_earnings_4yr_usd` | Agregado calculado sobre o alvo |
@@ -158,19 +138,13 @@ descartada: permanece apenas para agrupar o split de treino e teste.
 |---|---|
 | `ai_tool_examples` | Lista de texto aberto, não uma categoria estável |
 
-A lista das 37 exclusões, em código, está em [`DROPPED_COLUMNS`](code/pipeline.py).
-Depois desses cortes restam **33 features**: 26 numéricas e 7 categóricas,
-todas listadas no dicionário da seção 1‑A.
+A lista das 37 exclusões, em código, está em [`DROPPED_COLUMNS`](code/pipeline.py). Depois desses cortes restam **33 features**: 26 numéricas e 7 categóricas, todas listadas no dicionário da seção 1‑A.
 
 ### C. Alvo de regressão
 
-O arquivo tem **58.112** linhas com o alvo preenchido. Dessas, tiram-se 49
-programas de instituições estrangeiras: eles não têm as mesmas variáveis
-geográficas dos programas americanos e formariam uma população à parte.
-Sobram **58.063** linhas para a análise.
+O arquivo tem **58.112** linhas com o alvo preenchido. Dessas, tiram-se 49 programas de instituições estrangeiras: eles não têm as mesmas variáveis geográficas dos programas americanos e formariam uma população à parte. Sobram **58.063** linhas para a análise.
 
-Essa remoção define a população de interesse antes do split. O alvo continua sem
-imputação: programas sem renda divulgada não entram na tarefa supervisionada.
+Essa remoção define a população de interesse antes do split. O alvo continua sem imputação: programas sem renda divulgada não entram na tarefa supervisionada.
 
 | Estatística | Valor |
 |---|---:|
@@ -183,10 +157,9 @@ imputação: programas sem renda divulgada não entram na tarefa supervisionada.
 
 ![Histograma e boxplot da renda mediana no 4º ano, com mediana e média marcadas](figures/fig01_target.png)
 
-O alvo é assimétrico à direita: tem muitos valores
-extremos altos e a média (US$ 64.887) fica acima da mediana (US$ 59.011).
-Na futura rede, vale comparar a escala original com `log1p(y)`,
-reportando o erro final também em dólares, para manter a interpretação.
+O alvo é assimétrico à direita: tem muitos valores extremos altos e a média (US$ 64.887) fica acima da mediana (US$ 59.011).
+
+Na futura rede, vale comparar a escala original com `log1p(y)`, reportando o erro final também em dólares, para manter a interpretação.
 
 > O *skew* de **1,755** acima usa as 58.063 linhas domésticas inteiras.
 > Na tabela da seção 2‑A, calculada só com o treino (46.323 linhas), o
@@ -195,41 +168,23 @@ reportando o erro final também em dólares, para manter a interpretação.
 
 ### D. Treino e teste
 
-Divide-se a base de dados com `GroupShuffleSplit(test_size=0.20, random_state=42)`,
-agrupando por `opeid6` (a instituição). Isso evita que a mesma instituição
-apareça dos dois lados do split, um critério mais rígido que sortear linha
-por linha, porque instituições repetem muitos atributos entre seus próprios
-cursos.
+Divide-se a base de dados com `GroupShuffleSplit(test_size=0.20, random_state=42)`, agrupando por `opeid6` (a instituição). Isso evita que a mesma instituição apareça dos dois lados do split, um critério mais rígido que sortear linha por linha, porque instituições repetem muitos atributos entre seus próprios cursos.
 
 --8<-- "docs/projects/eda/tables/split_target_summary.md"
 
-As medianas diferem em apenas **US$ 568 (0,96%)**, sinal de que o alvo ficou
-equilibrado mesmo sem estratificação. Como o alvo é contínuo, prioriza-se o
-bloqueio por instituição para evitar vazamento entre grupos. Um split
-temporal não se aplica: o arquivo é um retrato transversal e não possui uma
-data de observação por linha. Há **0 instituições em comum** entre treino e
-teste.
+As medianas diferem em apenas **US$ 568 (0,96%)**, sinal de que o alvo ficou equilibrado mesmo sem estratificação. Como o alvo é contínuo, prioriza-se o bloqueio por instituição para evitar vazamento entre grupos. Um split temporal não se aplica: o arquivo é um retrato transversal e não possui uma data de observação por linha. Há **0 instituições em comum** entre treino e teste.
 
-A partir daqui, toda estatística de imputação, todo limite de outlier, toda
-escala e todo agrupamento de categoria rara é aprendido **só no treino** e
-depois aplicado ao teste.
+A partir daqui, toda estatística de imputação, todo limite de outlier, toda escala e todo agrupamento de categoria rara é aprendido **só no treino** e depois aplicado ao teste.
 
 ## 2. Análise univariada
 
 ### A. Numéricas
 
-Contagem, ausência, média, mediana, desvio, quartis, extremos e assimetria
-de cada numérica mantida e do alvo, sempre calculados no treino:
+Contagem, ausência, média, mediana, desvio, quartis, extremos e assimetria de cada numérica mantida e do alvo, sempre calculados no treino:
 
 --8<-- "docs/projects/eda/tables/numeric_summary_train.md"
 
-Para manter uma única figura legível, seleciona-se o alvo e 11 preditoras
-que representam todos os blocos do problema: renda anterior, dívida, custo,
-seletividade e tamanho institucional, escala do programa, salário,
-crescimento e vagas no mercado de trabalho e exposição à IA. A escolha
-busca diversidade de domínio, escala e formato e não apenas as maiores
-correlações com o alvo. As 27 distribuições continuam cobertas pela tabela
-acima.
+Para manter uma única figura legível, seleciona-se o alvo e 11 preditoras que representam todos os blocos do problema: renda anterior, dívida, custo, seletividade e tamanho institucional, escala do programa, salário, crescimento e vagas no mercado de trabalho e exposição à IA. A escolha busca diversidade de domínio, escala e formato e não apenas as maiores correlações com o alvo. As 27 distribuições continuam cobertas pela tabela acima.
 
 ![Histogramas do alvo e de 11 preditoras representativas, calculados no treino](figures/fig02_numeric_distributions.png)
 
@@ -237,20 +192,13 @@ As escalas e os formatos variam muito de coluna
 para coluna:
 
 - As três flags binárias (`is_main_campus`, `institution_is_hbcu` e
-  `outcomes_shared_across_campuses`) são proporções de 0/1 e sua *skewness*
-  não deve ser interpretada como formato de uma variável contínua.
-- SAT (*skew* 0,438) e crescimento ocupacional (0,460) são aproximadamente
-  simétricos. Latitude, longitude, tuition out-of-state, crescimento máximo
+  `outcomes_shared_across_campuses`) são proporções de 0/1 e sua *skewness* não deve ser interpretada como formato de uma variável contínua.
+- SAT (*skew* 0,438) e crescimento ocupacional (0,460) são aproximadamente simétricos. Latitude, longitude, tuition out-of-state, crescimento máximo
   e salário ocupacional têm assimetria moderada (`0,5 ≤ |skew| < 1`).
-- A taxa de admissão tem assimetria negativa forte (−1,282): a massa fica
-  perto das taxas altas e a cauda aponta para instituições mais seletivas.
-- As 16 numéricas restantes têm cauda forte à direita: alvo, renda anterior,
-  matrículas, tuition in-state, diplomas nos dois anos, tamanho da coorte,
-  dívida e número de mutuários, contagem e emprego das ocupações, vagas
-  anuais e os quatro indicadores de IA.
+- A taxa de admissão tem assimetria negativa forte (−1,282): a massa fica perto das taxas altas e a cauda aponta para instituições mais seletivas.
+- As 16 numéricas restantes têm cauda forte à direita: alvo, renda anterior, matrículas, tuition in-state, diplomas nos dois anos, tamanho da coorte, dívida e número de mutuários, contagem e emprego das ocupações, vagas anuais e os quatro indicadores de IA.
 - `awards_year1` chega a 8.584 contra uma mediana de 33 e `institution_undergrad_enrollment` chega a 163.164 contra uma mediana de 5.011,5.
-- Os indicadores de IA são também zero-inflados: suas medianas são zero ou
-  próximas de zero, embora apresentem caudas positivas longas.
+- Os indicadores de IA são também zero-inflados: suas medianas são zero ou próximas de zero, embora apresentem caudas positivas longas.
 
 Isso sustenta a escolha de winsorização (clipping) e padronização, as duas
 aprendidas só no treino (seção 4‑A).
@@ -268,19 +216,13 @@ usa menos de 20 ocorrências, o mesmo limite usado depois pelo
 - `cip_title` (o curso) tem **350 categorias** no treino; **142** delas
   aparecem menos de 20 vezes.
 - `largest_linked_occupation` tem 127 categorias, 32 raras.
-- Entre os valores observados, a ocupação mais comum é "Managers, all other"
-  (13,06%), um rótulo genérico que limita o quanto dá para interpretar essa
-  coluna. Na tabela completa, o percentual usa todas as linhas, inclusive
-  as 1,45% sem ocupação.
+- Entre os valores observados, a ocupação mais comum é "Managers, all other" (13,06%), um rótulo genérico que limita o quanto dá para interpretar essa coluna. Na tabela completa, o percentual usa todas as linhas, inclusive as 1,45% sem ocupação.
 - As demais categóricas têm cardinalidade baixa a moderada.
 
 ![Frequência das 10 categorias mais comuns em cada uma das 7 variáveis categóricas do modelo](figures/fig03_categorical_frequencies.png)
 
-Instituições públicas, bacharelados e cursos
-presenciais dominam o dataset. `cip_title` (curso) e `largest_linked_occupation`
-(ocupação) têm cauda longa: poucas categorias grandes e muitas pequenas.
-Por isso o one-hot encoding (seção 4‑A) agrupa as categorias raras em um
-grupo "outras", em vez de criar milhares de colunas frágeis.
+Instituições públicas, bacharelados e cursos presenciais dominam o dataset. `cip_title` (curso) e `largest_linked_occupation`
+(ocupação) têm cauda longa: poucas categorias grandes e muitas pequenas. Por isso o one-hot encoding (seção 4‑A) agrupa as categorias raras em um grupo "outras", em vez de criar milhares de colunas frágeis.
 
 ## 3. Análise bivariada e multivariada
 
@@ -309,11 +251,7 @@ conclusão; `(Ausente)` é mantido como grupo descritivo.
 
 --8<-- "docs/projects/eda/tables/categorical_target_summary_train.md"
 
-As amplitudes mostram que todas as sete variáveis se relacionam com o alvo,
-mas não devem ser comparadas como medida de importância: variáveis com 350
-níveis, como `cip_title`, têm mais oportunidade de produzir extremos do que
-variáveis com três ou quatro níveis. São associações descritivas, não
-efeitos causais.
+As amplitudes mostram que todas as sete variáveis se relacionam com o alvo, mas não devem ser comparadas como medida de importância: variáveis com 350 níveis, como `cip_title`, têm mais oportunidade de produzir extremos do que variáveis com três ou quatro níveis. São associações descritivas, não efeitos causais.
 
 ![Distribuição do alvo por nível de credencial e por tipo de controle institucional](figures/fig06_categories_target.png)
 
@@ -335,34 +273,15 @@ estudantes de cada grupo impedem uma leitura causal.
 
 ![Distribuição do alvo nas 12 famílias de curso (CIP) mais frequentes](figures/fig07_cip_family_target.png)
 
-Entre as famílias mais frequentes, Engenharia
-lidera com mediana de **US$ 95.085**, seguida por Computação (**US$
-78.969**). Artes, serviços pessoais e humanidades ficam nas posições mais
-baixas. O campo de estudo é uma fonte forte de variação e deve continuar no
-modelo, com as categorias raras agrupadas. `cip_family_title` é usado aqui
-somente para tornar a figura legível; a feature efetiva, `cip_title`, está
-coberta na tabela compacta acima.
+Entre as famílias mais frequentes, Engenharia lidera com mediana de **US$ 95.085**, seguida por Computação (**US$ 78.969**). Artes, serviços pessoais e humanidades ficam nas posições mais baixas. O campo de estudo é uma fonte forte de variação e deve continuar no modelo, com as categorias raras agrupadas. `cip_family_title` é usado aqui somente para tornar a figura legível; a feature efetiva, `cip_title`, está coberta na tabela compacta acima.
 
 ### C. Numérica × categórica
 
-Escolhemos os dois pares por relevância substantiva, baixa cardinalidade
-para leitura e capacidade de mostrar posição e dispersão no mesmo gráfico.
-Tuition × controle institucional compara diretamente regimes de preço;
-salário ocupacional × credencial conecta formação ao mercado de trabalho
-sem repetir a relação categórica × alvo da seção anterior. Os boxplots usam
-todo o treino, não uma amostra.
+Escolhemos os dois pares por relevância substantiva, baixa cardinalidade para leitura e capacidade de mostrar posição e dispersão no mesmo gráfico. Tuition × controle institucional compara diretamente regimes de preço; salário ocupacional × credencial conecta formação ao mercado de trabalho sem repetir a relação categórica × alvo da seção anterior. Os boxplots usam todo o treino, não uma amostra.
 
 ![Mensalidade in-state por tipo de instituição, e salário da ocupação associada por nível de credencial](figures/fig08_numeric_categorical.png)
 
-Instituições privadas sem fins lucrativos cobram
-mensalidade mediana de **US$ 42.050** (IQR US$ 30.480–57.056), acima das
-privadas com fins lucrativos (**US$ 15.120**) e das públicas (**US$ 9.186**;
-IQR US$ 5.997–12.762), além de serem mais dispersas. O salário da ocupação
-associada também muda de posição: a mediana vai de **US$ 59.810** nos
-certificados de graduação a **US$ 134.830** no primeiro diploma
-profissional. Logo, os grupos diferem em posição e dispersão. Padronizar as
-escalas é necessário, mas não apaga essas diferenças estruturais: o modelo
-ainda vai "ver" essa variação.
+Instituições privadas sem fins lucrativos cobram mensalidade mediana de **US$ 42.050** (IQR US$ 30.480–57.056), acima das privadas com fins lucrativos (**US$ 15.120**) e das públicas (**US$ 9.186**; IQR US$ 5.997–12.762), além de serem mais dispersas. O salário da ocupação associada também muda de posição: a mediana vai de **US$ 59.810** nos certificados de graduação a **US$ 134.830** no primeiro diploma profissional. Logo, os grupos diferem em posição e dispersão. Padronizar as escalas é necessário, mas não apaga essas diferenças estruturais: o modelo ainda vai "ver" essa variação.
 
 ## 4. Pré-processamento
 
@@ -379,38 +298,21 @@ Cada escolha responde a um achado da análise acima:
 
 ### B. Redução de dimensionalidade
 
-As três projeções usam a mesma amostra reproduzível de 3.000 linhas do
-treino já pré-processado. A cor mostra o alvo só para leitura visual: ele
-não entra em nenhum dos três algoritmos.
+As três projeções usam a mesma amostra reproduzível de 3.000 linhas do treino já pré-processado. A cor mostra o alvo só para leitura visual: ele não entra em nenhum dos três algoritmos.
 
 ![Projeção PCA do treino pré-processado: dispersão colorida pelo alvo, variância acumulada e principais loadings](figures/fig09_pca.png)
 
-PC1 + PC2 explicam só **24,92%** da variância:
-pouco. Os loadings mais fortes vêm de indicadores de ausência (ocupação,
-IA, mensalidade), não das variáveis originais: isso quer dizer que o
-**padrão de quais dados faltam** organiza o espaço tanto quanto os valores
-em si. Em 2D, a PCA não separa o alvo de forma limpa.
+PC1 + PC2 explicam só **24,92%** da variância: pouco. Os loadings mais fortes vêm de indicadores de ausência (ocupação, IA, mensalidade), não das variáveis originais: isso quer dizer que o **padrão de quais dados faltam** organiza o espaço tanto quanto os valores em si. Em 2D, a PCA não separa o alvo de forma limpa.
 
 ![Projeções t-SNE da amostra pré-processada em duas perplexidades, coloridas pela renda mediana no 4º ano](figures/fig10_tsne.png)
 
-O t-SNE revela "ilhas" locais que a PCA linear
-não mostra, mas o desenho muda visivelmente entre perplexidade 30 e 50, e as
-cores ainda se misturam. Tamanho dos grupos e distância entre ilhas não
-representam frequência real nem distância global; é só para diagnóstico.
+O t-SNE revela "ilhas" locais que a PCA linear não mostra, mas o desenho muda visivelmente entre perplexidade 30 e 50, e as cores ainda se misturam. Tamanho dos grupos e distância entre ilhas não representam frequência real nem distância global; é só para diagnóstico.
 
 ![Projeções UMAP com 15 e 50 vizinhos, coloridas pela renda mediana no 4º ano](figures/fig11_umap.png)
 
-O UMAP também mostra componentes desconectados,
-ligados a combinações de categorias e padrões de ausência. Mudar de 15 para
-50 vizinhos altera a geometria, mas em nenhum dos dois casos aparece uma
-fronteira simples de renda; de novo, distâncias entre grupos não têm
-interpretação direta.
+O UMAP também mostra componentes desconectados, ligados a combinações de categorias e padrões de ausência. Mudar de 15 para 50 vizinhos altera a geometria, mas em nenhum dos dois casos aparece uma fronteira simples de renda; de novo, distâncias entre grupos não têm interpretação direta.
 
-**Em conjunto:** t-SNE e UMAP mostram estrutura local não linear que a PCA
-esconde, mas isso não significa que as "ilhas" sejam clusters reais de
-alunos parecidos. Para a regressão, essas projeções servem só de
-diagnóstico: a rede vai receber a matriz pré-processada completa, não os 2
-componentes.
+**Em conjunto:** t-SNE e UMAP mostram estrutura local não linear que a PCA esconde, mas isso não significa que as "ilhas" sejam clusters reais de alunos parecidos. Para a regressão, essas projeções servem só de diagnóstico: a rede vai receber a matriz pré-processada completa, não os 2 componentes.
 
 ### C. Pipeline
 
@@ -432,19 +334,10 @@ está em [`analysis.py`](code/analysis.py); rode com
 
 **Principais achados:**
 
-- A renda de 4 anos é assimétrica à direita (Figura 1; skew 1,755). A
-  futura modelagem deve comparar o alvo original com `log1p(y)`, sem
-  esconder o erro absoluto em dólares.
-- A renda do 1º ano é o sinal numérico mais forte (Figura 5; ρ = 0,887),
-  mas falta em 18,23% do treino. Uma versão do modelo sem essa variável vai
-  medir o quanto o resultado depende de um número financeiro que já existe
-  antes do alvo.
-- Curso, credencial e controle institucional deslocam a posição e a
-  dispersão do alvo (Figuras 6–8): encoding de categorias raras e
-  regularização vão ser essenciais.
-- PC1 + PC2 retêm só 24,92% da variância, e as projeções não lineares
-  mostram estrutura instável (Figuras 9–11). Não há motivo para reduzir a
-  entrada da rede a duas dimensões.
+- A renda de 4 anos é assimétrica à direita (Figura 1; skew 1,755). A futura modelagem deve comparar o alvo original com `log1p(y)`, sem esconder o erro absoluto em dólares.
+- A renda do 1º ano é o sinal numérico mais forte (Figura 5; ρ = 0,887), mas falta em 18,23% do treino. Uma versão do modelo sem essa variável vai medir o quanto o resultado depende de um número financeiro que já existe antes do alvo.
+- Curso, credencial e controle institucional deslocam a posição e a dispersão do alvo (Figuras 6–8): encoding de categorias raras e regularização vão ser essenciais.
+- PC1 + PC2 retêm só 24,92% da variância, e as projeções não lineares mostram estrutura instável (Figuras 9–11). Não há motivo para reduzir a entrada da rede a duas dimensões.
 
 **Riscos para a modelagem e como tratar cada um:**
 
