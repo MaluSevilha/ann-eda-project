@@ -286,30 +286,19 @@ grupo "outras", em vez de criar milhares de colunas frágeis.
 
 ### A. Numérica × numérica
 
-Usamos correlação de **Spearman**, mais robusta que Pearson às caudas
-longas, outliers e relações não necessariamente lineares vistas na Figura 2.
-Matriz completa: [tabela em Markdown](tables/spearman_correlation_train.md).
+Usamos correlação de **Spearman**, mais robusta que Pearson às caudas longas, outliers e relações não necessariamente lineares vistas na Figura 2. Matriz completa: [tabela em Markdown](tables/spearman_correlation_train.md).
 
-- Par mais redundante entre features: emprego total da ocupação × vagas
-  anuais abertas, **ρ = 0,976**.
-- Maiores correlações com o alvo: renda no 1º ano (**ρ = 0,887**), salário
-  mediano da ocupação (0,469), dívida mediana (0,404), mensalidade
-  out-of-state (0,398) e tecnologias emergentes (0,339).
+- Par mais redundante entre features: emprego total da ocupação × vagas anuais abertas, **ρ = 0,976**.
+- Maiores correlações com o alvo: renda no 1º ano (**ρ = 0,887**), salário mediano da ocupação (0,469), dívida mediana (0,404), mensalidade out-of-state (0,398) e tecnologias emergentes (0,339).
 
 ![Matriz de correlação de Spearman, anotada, entre o alvo e as variáveis numéricas mais associadas a ele](figures/fig04_spearman_heatmap.png)
 
-**Conclusão da Figura 4.** O sinal mais forte vem de um resultado financeiro
-anterior (renda de 1 ano), não de atributos estruturais do curso. Como
-emprego e vagas de uma ocupação são quase a mesma informação (ρ = 0,976),
-vale usar regularização na rede e uma análise de ablação, sem remover essa
-redundância às cegas, já que ainda pode carregar informação útil.
+O sinal mais forte vem de um resultado financeiro anterior (renda de 1 ano), não de atributos estruturais do curso. Como emprego e vagas de uma ocupação são quase a mesma informação (ρ = 0,976), vale usar regularização na rede e uma análise de ablação, sem remover essa redundância às cegas, já que ainda pode carregar informação útil.
 
 ![Dispersão da renda no 1º ano e do salário da ocupação contra o alvo, com o coeficiente de Spearman de cada painel](figures/fig05_numeric_target_scatter.png)
 
-**Conclusão da Figura 5.** A renda do 1º ano segue uma relação quase linear
-com o alvo. Já o salário da ocupação sobe junto, mas de forma mais dispersa
-e em faixas verticais, porque o mesmo número do BLS se repete em muitos
-programas ligados à mesma ocupação.
+A renda do 1º ano segue uma relação quase linear com o alvo. Já o salário da ocupação sobe junto, mas de forma mais dispersa
+e em faixas verticais, porque o mesmo número do BLS se repete em muitos programas ligados à mesma ocupação.
 
 ### B. Categórica × alvo
 
@@ -328,7 +317,7 @@ efeitos causais.
 
 ![Distribuição do alvo por nível de credencial e por tipo de controle institucional](figures/fig06_categories_target.png)
 
-**Conclusão da Figura 6.** A posição do alvo muda bastante entre grupos:
+A posição do alvo muda bastante entre grupos:
 
 | Credencial | Mediana |
 |---|---:|
@@ -346,7 +335,7 @@ estudantes de cada grupo impedem uma leitura causal.
 
 ![Distribuição do alvo nas 12 famílias de curso (CIP) mais frequentes](figures/fig07_cip_family_target.png)
 
-**Conclusão da Figura 7.** Entre as famílias mais frequentes, Engenharia
+Entre as famílias mais frequentes, Engenharia
 lidera com mediana de **US$ 95.085**, seguida por Computação (**US$
 78.969**). Artes, serviços pessoais e humanidades ficam nas posições mais
 baixas. O campo de estudo é uma fonte forte de variação e deve continuar no
@@ -365,7 +354,7 @@ todo o treino, não uma amostra.
 
 ![Mensalidade in-state por tipo de instituição, e salário da ocupação associada por nível de credencial](figures/fig08_numeric_categorical.png)
 
-**Conclusão da Figura 8.** Instituições privadas sem fins lucrativos cobram
+Instituições privadas sem fins lucrativos cobram
 mensalidade mediana de **US$ 42.050** (IQR US$ 30.480–57.056), acima das
 privadas com fins lucrativos (**US$ 15.120**) e das públicas (**US$ 9.186**;
 IQR US$ 5.997–12.762), além de serem mais dispersas. O salário da ocupação
@@ -396,7 +385,7 @@ não entra em nenhum dos três algoritmos.
 
 ![Projeção PCA do treino pré-processado: dispersão colorida pelo alvo, variância acumulada e principais loadings](figures/fig09_pca.png)
 
-**Conclusão da Figura 9.** PC1 + PC2 explicam só **24,92%** da variância:
+PC1 + PC2 explicam só **24,92%** da variância:
 pouco. Os loadings mais fortes vêm de indicadores de ausência (ocupação,
 IA, mensalidade), não das variáveis originais: isso quer dizer que o
 **padrão de quais dados faltam** organiza o espaço tanto quanto os valores
@@ -404,14 +393,14 @@ em si. Em 2D, a PCA não separa o alvo de forma limpa.
 
 ![Projeções t-SNE da amostra pré-processada em duas perplexidades, coloridas pela renda mediana no 4º ano](figures/fig10_tsne.png)
 
-**Conclusão da Figura 10.** O t-SNE revela "ilhas" locais que a PCA linear
+O t-SNE revela "ilhas" locais que a PCA linear
 não mostra, mas o desenho muda visivelmente entre perplexidade 30 e 50, e as
 cores ainda se misturam. Tamanho dos grupos e distância entre ilhas não
 representam frequência real nem distância global; é só para diagnóstico.
 
 ![Projeções UMAP com 15 e 50 vizinhos, coloridas pela renda mediana no 4º ano](figures/fig11_umap.png)
 
-**Conclusão da Figura 11.** O UMAP também mostra componentes desconectados,
+O UMAP também mostra componentes desconectados,
 ligados a combinações de categorias e padrões de ausência. Mudar de 15 para
 50 vizinhos altera a geometria, mas em nenhum dos dois casos aparece uma
 fronteira simples de renda; de novo, distâncias entre grupos não têm
@@ -425,9 +414,7 @@ componentes.
 
 ### C. Pipeline
 
-O pré-processador é um `Pipeline` + `ColumnTransformer`, ajustado **só no
-treino**, implementado em [`pipeline.py`](code/pipeline.py) (importável, sem
-efeitos colaterais). Depois de transformar treino e teste:
+O pré-processador é um `Pipeline` + `ColumnTransformer`, ajustado **só no treino**, implementado em [`pipeline.py`](code/pipeline.py) (importável, sem efeitos colaterais). Depois de transformar treino e teste:
 
 | Checagem | Resultado |
 |---|---|
