@@ -13,6 +13,8 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python download_data.py
 python docs/projects/eda/code/analysis.py
+python -m docs.projects.regression.code.data --check
+pytest -q
 mkdocs build --strict
 mkdocs serve
 ```
@@ -22,3 +24,12 @@ resultados são regeneradas pelo script de análise. O dicionário, curado a
 partir das fontes, é validado pelo mesmo script contra as 72 colunas do CSV.
 O CSV bruto não é versionado por exceder 100 MB, mas o download público é
 automatizado.
+
+A fundação da etapa supervisionada fica em `docs/projects/regression/`. O
+comando de verificação acima reproduz os splits de desenvolvimento, confere o
+manifesto versionado e mantém o conjunto de teste bloqueado para a avaliação
+final.
+
+Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
+evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode
+substituí-la pela distribuição indicada para a versão de CUDA da máquina.

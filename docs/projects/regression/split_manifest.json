@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "dataset": {
+    "path": "data/raw/college_majors_2026.csv",
+    "sha256": "58f1c10e79793f33049f3b381cd81d4d0c190ca1052e427c29779d0c89c5ceca",
+    "modeling_rows": 58063,
+    "filter": "median_earnings_4yr_usd not null and institution_control != Foreign"
+  },
+  "split_parameters": {
+    "group_column": "opeid6",
+    "eda_test_size": 0.2,
+    "eda_seed": 42,
+    "validation_size_within_eda_train": 0.2,
+    "validation_seed": 42
+  },
+  "splits": {
+    "train": {
+      "rows": 36565,
+      "institutions": 2969,
+      "program_id_sha256": "387f1cc705fafc49ab5db640685be8888c235029105de1d170ff518a870ab2f9"
+    },
+    "validation": {
+      "rows": 9758,
+      "institutions": 743,
+      "program_id_sha256": "025e39c26cc44251af79b487b765f0d9757cecb579c96017235ad571f7556ffb"
+    },
+    "test_locked": {
+      "rows": 11740,
+      "institutions": 928,
+      "program_id_sha256": "30d4a2c9a160f5b33fa20196cdfe69888beaa3f60fd7243b1f84b8586dc39e95"
+    }
+  },
+  "institution_overlaps": {
+    "train_validation": 0,
+    "train_test": 0,
+    "validation_test": 0
+  },
+  "preprocessing": {
+    "fit_split": "train",
+    "transformed_splits": [
+      "train",
+      "validation"
+    ],
+    "rare_category_min_count": 20,
+    "train_shape": [
+      36565,
+      420
+    ],
+    "validation_shape": [
+      9758,
+      420
+    ],
+    "matrix_format": "csr",
+    "dtype": "float32",
+    "feature_count": 420,
+    "unique_feature_names": 420,
+    "train_nan": 0,
+    "validation_nan": 0
+  },
+  "test_policy": {
+    "locked": true,
+    "transformed": false,
+    "target_statistics_computed": false,
+    "predictive_metrics_computed": false
+  }
+}
