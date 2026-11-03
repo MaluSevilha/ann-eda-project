@@ -1,0 +1,58 @@
+"""Definição configurável da MLP de regressão."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import torch
+from torch import nn
+
+
+@dataclass(frozen=True)
+class MLPConfig:
+    """Arquitetura da rede; regularização será adicionada em outra etapa."""
+
+    input_dim: int = 420
+    hidden_dims: tuple[int, ...] = (128, 64)
+
+    def __post_init__(self) -> None:
+        if self.input_dim <= 0:
+            raise ValueError("input_dim deve ser positivo")
+        if not self.hidden_dims or any(width <= 0 for width in self.hidden_dims):
+            raise ValueError("hidden_dims deve conter larguras positivas")
+
+
+class MLPRegressor(nn.Module):
+    """MLP com ReLU nas ocultas e uma única saída linear."""
+
+    def __init__(self, config: MLPConfig):
+        super().__init__()
+        self.config = config
+        layers: list[nn.Module] = []
+        previous = config.input_dim
+        for width in config.hidden_dims:
+            layers.extend([nn.Linear(previous, width), nn.ReLU()])
+            previous = width
+        layers.append(nn.Linear(previous, 1))
+        self.network = nn.Sequential(*layers)
+        self._initialize_weights()
+
+    def _initialize_weights(self) -> None:
+        linear_layers = [
+            layer for layer in self.network if isinstance(layer, nn.Linear)
+        ]
+        for layer in linear_layers[:-1]:
+            nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+            nn.init.zeros_(layer.bias)
+        output = linear_layers[-1]
+        nn.init.xavier_uniform_(output.weight)
+        nn.init.zeros_(output.bias)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.network(inputs)
+
+
+def count_trainable_parameters(model: nn.Module) -> int:
+    """Conta apenas parâmetros que recebem gradientes."""
+
+    return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)

@@ -77,11 +77,54 @@ teste.
 
 ## 2. A rede
 
-Pendente
+A rede de referência recebe as **420 features** do mesmo pipeline usado pelos
+baselines e tem arquitetura **420 → 128 → 64 → 1**. As duas camadas ocultas
+usam ReLU, o que permite aprender relações não lineares; a saída tem uma única
+unidade linear, adequada à regressão porque não limita artificialmente a faixa
+das previsões.
+
+Os pesos das camadas ocultas usam inicialização de Kaiming, coerente com ReLU;
+a saída usa Xavier e todos os vieses começam em zero. A rede tem **62.209
+parâmetros treináveis**, equivalentes a **1,70 parâmetro por linha** nas 36.565
+linhas do treino interno. É capacidade suficiente para uma referência não
+linear, mas grande o bastante para exigir a análise de overfitting abaixo.
+
+Esta primeira rede é deliberadamente **sem regularização**: não usa dropout,
+BatchNorm/LayerNorm nem weight decay. Ela será o controle para as comparações
+do Entregável 4, e não a configuração final.
 
 ## 3. Treinamento
 
-Pendente
+O alvo recebe `log1p` para reduzir a assimetria observada na EDA e depois é
+padronizado pela média (**10,9913698970**) e pelo desvio
+(**0,4008667477**) aprendidos somente no treino. A rede otimiza Huber loss com
+`delta=1` nessa escala; todas as previsões são invertidas para dólares antes de
+calcular MAE, RMSE e R².
+
+O treinamento usa Adam, learning rate **0,001**, batch **256**, no máximo 200
+épocas e semente 42. O early stopping monitora diretamente o MAE em dólares,
+com paciência 15 e melhora mínima de US$ 1, guardando em memória e restaurando
+os melhores pesos. A execução canônica usa CPU e operações determinísticas.
+
+![Curvas de loss no treino e validação e MAE de validação por época](figures/fig01_training_curves.png)
+
+A rede aprende rapidamente nas primeiras épocas: o MAE cai de US$ 7.241,40 na
+época 1 para US$ 6.584,17 na época 5. O melhor ponto pela métrica principal é a
+**época 11**, com **MAE US$ 6.566,01**, **RMSE US$ 10.205,46** e **R²
+0,862559**. A execução para na época **26** e restaura os pesos da época 11.
+
+Depois da época 11, a loss de treino continua caindo, de 0,03943 para 0,02677,
+enquanto a loss de validação sobe de 0,06080 para 0,06510 e o MAE oscila sem
+nova melhora. Essa abertura entre as curvas é evidência de overfitting e
+justifica tanto o early stopping quanto a comparação de regularização na etapa
+seguinte. A menor Huber loss de validação ocorre antes do menor MAE em dólares;
+isso reforça a decisão de restaurar pela métrica principal, e não pela loss
+transformada.
+
+Na validação, esta referência reduz o MAE do Ridge em **15,97%** e fica US$
+**75,80** abaixo do limite preliminar de US$ 6.641,81. Isso ainda não responde
+ao critério final: arquitetura e regularização serão escolhidas na validação e
+o teste só será aberto na etapa 5.
 
 ## 4. Regularização e hiperparâmetros
 

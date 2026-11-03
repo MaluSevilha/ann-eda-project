@@ -15,6 +15,7 @@ python download_data.py
 python docs/projects/eda/code/analysis.py
 python -m docs.projects.regression.code.data --check
 python -m docs.projects.regression.code.baselines --check
+python -m docs.projects.regression.code.train --check
 pytest -q
 mkdocs build --strict
 mkdocs serve
@@ -34,6 +35,10 @@ final.
 Os baselines de regressão são reproduzidos somente sobre treino e validação.
 Use `--write-results` no módulo `baselines` apenas quando quiser regenerar os
 artefatos versionados; `--check` recalcula e confere os resultados existentes.
+
+A MLP de referência também usa comandos separados: `--write-reference`
+regenera o histórico e a figura em CPU, enquanto `--check` retreina com a
+mesma semente e verifica a reprodução sem acessar o teste.
 
 Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
 evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode
