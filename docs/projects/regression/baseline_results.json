@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "selection_split": "validation",
+  "test_accessed": false,
+  "primary_metric": "mae_usd",
+  "ridge_alphas": [
+    0.001,
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0,
+    10000.0
+  ],
+  "results": [
+    {
+      "model": "Ridge",
+      "configuration": "alpha=1",
+      "mae_usd": 7813.89,
+      "rmse_usd": 11795.41,
+      "r2": 0.816399
+    },
+    {
+      "model": "Ridge",
+      "configuration": "alpha=0.1",
+      "mae_usd": 7818.77,
+      "rmse_usd": 11795.13,
+      "r2": 0.816407
+    },
+    {
+      "model": "Ridge",
+      "configuration": "alpha=0.01",
+      "mae_usd": 7821.37,
+      "rmse_usd": 11797.76,
+      "r2": 0.816326
+    },
+    {
+      "model": "Ridge",
+      "configuration": "alpha=0.001",
+      "mae_usd": 7821.67,
+      "rmse_usd": 11798.15,
+      "r2": 0.816313
+    },
+    {
+      "model": "Ridge",
+      "configuration": "alpha=10",
+      "mae_usd": 7824.4,
+      "rmse_usd": 11885.03,
+      "r2": 0.813598
+    },
+    {
+      "model": "Ridge",
+      "configuration": "alpha=100",
+      "mae_usd": 7939.51,
+      "rmse_usd": 12296.89,
+      "r2": 0.800455
+    },
+    {
+      "model": "Ridge",
+      "configuration": "alpha=1000",
+      "mae_usd": 8353.53,
+      "rmse_usd": 13088.02,
+      "r2": 0.773954
+    },
+    {
+      "model": "Ridge",
+      "configuration": "alpha=10000",
+      "mae_usd": 9226.49,
+      "rmse_usd": 14262.21,
+      "r2": 0.731575
+    },
+    {
+      "model": "DummyRegressor",
+      "configuration": "strategy=mean",
+      "mae_usd": 20023.63,
+      "rmse_usd": 27563.04,
+      "r2": -0.002545
+    }
+  ],
+  "best_baseline": {
+    "model": "Ridge",
+    "configuration": "alpha=1",
+    "mae_usd": 7813.89,
+    "rmse_usd": 11795.41,
+    "r2": 0.816399
+  },
+  "mlp_success_improvement_pct": 15.0,
+  "mlp_success_threshold_mae_usd": 6641.81
+}

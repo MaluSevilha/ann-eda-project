@@ -14,6 +14,7 @@ pip install -r requirements.txt
 python download_data.py
 python docs/projects/eda/code/analysis.py
 python -m docs.projects.regression.code.data --check
+python -m docs.projects.regression.code.baselines --check
 pytest -q
 mkdocs build --strict
 mkdocs serve
@@ -29,6 +30,10 @@ A fundação da etapa supervisionada fica em `docs/projects/regression/`. O
 comando de verificação acima reproduz os splits de desenvolvimento, confere o
 manifesto versionado e mantém o conjunto de teste bloqueado para a avaliação
 final.
+
+Os baselines de regressão são reproduzidos somente sobre treino e validação.
+Use `--write-results` no módulo `baselines` apenas quando quiser regenerar os
+artefatos versionados; `--check` recalcula e confere os resultados existentes.
 
 Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
 evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode

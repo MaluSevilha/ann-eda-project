@@ -47,28 +47,54 @@ python -m docs.projects.regression.code.data --check
 
 ## 1. Baselines
 
-Pendente — Entregável 2.
+Os dois baselines obrigatórios usam exatamente as mesmas 420 features geradas
+pelo pipeline ajustado no treino interno. O teste continua bloqueado: todos os
+números desta seção são da **validação**.
+
+O baseline trivial é `DummyRegressor(strategy="mean")`: ele prevê para todo
+programa a renda média observada no treino. Portanto, mede quanto se ganha
+apenas por sair de uma constante, sem usar nenhuma feature. O baseline linear
+é Ridge, que combina as features por uma função linear e penaliza coeficientes
+grandes. Como o pipeline já padroniza as numéricas, comparamos a grade de
+`alpha` **0,001; 0,01; 0,1; 1; 10; 100; 1.000; 10.000**, declarada antes da
+execução. A escolha é feita pelo menor MAE, a métrica principal.
+
+--8<-- "docs/projects/regression/tables/baseline_validation.md"
+
+O melhor baseline pela regra registrada foi **Ridge com `alpha=1`**, com MAE
+de **US$ 7.813,89**, RMSE de **US$ 11.795,41** e R² de **0,816399**. O
+`DummyRegressor` obteve MAE de **US$ 20.023,63**, então a regressão linear
+reduziu o erro absoluto em aproximadamente **61,0%**. Isso indica que uma
+combinação linear das features — especialmente após o tratamento das
+categorias — já explica uma parcela grande da variação e será uma referência
+exigente para a rede.
+
+Ridge com `alpha=0,1` teve RMSE marginalmente menor (US$ 11.795,13), mas não é
+o vencedor porque a seleção foi fixada pelo MAE antes da execução. Para cumprir
+o critério de sucesso de 15%, a futura MLP deverá alcançar na validação MAE de
+no máximo **US$ 6.641,81**. Nenhum desses resultados antecipa o desempenho no
+teste.
 
 ## 2. A rede
 
-Pendente — Entregável 3.
+Pendente
 
 ## 3. Treinamento
 
-Pendente — Entregável 3.
+Pendente
 
 ## 4. Regularização e hiperparâmetros
 
-Pendente — Entregável 4.
+Pendente
 
 ## 5. Avaliação no teste
 
-Pendente — Entregável 6. O teste permanece bloqueado até esta etapa.
+Pendente
 
 ## 6. Análise de erros
 
-Pendente — Entregável 7.
+Pendente
 
 ## 7. Conclusão
 
-Pendente — Entregável 8.
+Pendente
