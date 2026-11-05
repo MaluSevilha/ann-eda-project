@@ -1,6 +1,7 @@
 .venv
 .pytest_cache/
 *.csv
+!docs/projects/regression/final_test_predictions.csv
 *.pyc
 __pycache__
 site/
