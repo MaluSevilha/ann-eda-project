@@ -83,6 +83,15 @@ usam ReLU, o que permite aprender relações não lineares; a saída tem uma ún
 unidade linear, adequada à regressão porque não limita artificialmente a faixa
 das previsões.
 
+As larguras 128 e 64 formam um gargalo progressivo: reduzem as 420 entradas
+sem colapsar diretamente para uma representação muito estreita e mantêm a
+maior parte da capacidade na primeira combinação das features numéricas e
+one-hot. Elas foram escolhidas como uma referência intermediária, antes da
+busca, para evitar tanto uma rede quase linear quanto uma expansão grande da
+representação. O orçamento resultante também permanece próximo da escala do
+dataset, em vez de introduzir centenas de milhares de parâmetros já no modelo
+de controle.
+
 Os pesos das camadas ocultas usam inicialização de Kaiming, coerente com ReLU;
 a saída usa Xavier e todos os vieses começam em zero. A rede tem **62.209
 parâmetros treináveis**, equivalentes a **1,70 parâmetro por linha** nas 36.565
@@ -101,10 +110,20 @@ padronizado pela média (**10,9913698970**) e pelo desvio
 `delta=1` nessa escala; todas as previsões são invertidas para dólares antes de
 calcular MAE, RMSE e R².
 
-O treinamento usa Adam, learning rate **0,001**, batch **256**, no máximo 200
-épocas e semente 42. O early stopping monitora diretamente o MAE em dólares,
-com paciência 15 e melhora mínima de US$ 1, guardando em memória e restaurando
-os melhores pesos. A execução canônica usa CPU e operações determinísticas.
+O treinamento usa Adam porque suas taxas adaptativas são uma referência
+robusta para uma entrada que mistura colunas numéricas padronizadas e muitas
+dummies esparsas, sem exigir ajuste separado de momentum. O learning rate
+**0,001** é o ponto de partida da rede de controle e depois entra
+explicitamente na busca; a configuração final usa `3e-4` porque venceu na
+validação, não por observação do teste.
+
+O batch **256** produz cerca de 143 atualizações por época nas 36.565 linhas,
+mantendo diversidade entre lotes sem tornar cada época excessivamente longa
+na CPU. O máximo de **200 épocas** é apenas um teto amplo para também acomodar
+configurações com learning rate menor. O número efetivo de épocas é decidido
+pelo early stopping, que monitora diretamente o MAE em dólares, com paciência
+15 e melhora mínima de US$ 1, guarda em memória e restaura os melhores pesos.
+A execução canônica usa semente 42, CPU e operações determinísticas.
 
 ![Curvas de loss no treino e validação e MAE de validação por época](figures/fig01_training_curves.png)
 
