@@ -168,6 +168,22 @@ começou a piorar cedo, com melhor MAE já na época 5. A configuração vencedo
 é apenas uma recomendação desta busca; seu congelamento ocorre na próxima
 etapa, ainda sem acessar o teste.
 
+### Configuração congelada
+
+A recomendação foi congelada em [`final_config.json`](final_config.json) antes
+de qualquer avaliação no teste. Esse contrato fixa arquitetura, transformação
+do alvo, loss, otimizador, learning rate, batch, regularização, early stopping
+e a semente canônica **42**. A época 31 é somente a evidência da seleção: novos
+treinamentos continuarão restaurando a melhor época de validação, em vez de
+fixar a duração em 31 épocas.
+
+O arquivo é derivado da primeira linha da busca e validado contra ela; uma
+mudança no vencedor, nas métricas ou no protocolo faz a verificação falhar.
+Ele registra explicitamente `test_accessed: false`, e o script de busca rejeita
+objetos que exponham campos de teste. As sementes adicionais exigidas para a
+avaliação final serão declaradas no protocolo da próxima etapa, antes de
+liberar o conjunto bloqueado.
+
 ## 5. Avaliação no teste
 
 Pendente

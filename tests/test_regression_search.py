@@ -125,6 +125,19 @@ def test_grid_validation(monkeypatch):
         run_search(SimpleNamespace(X_train=SimpleNamespace(shape=(10, 4))), duplicated)
 
 
+def test_search_rejects_any_prepared_test_field(monkeypatch):
+    prepared = SimpleNamespace(
+        X_train=SimpleNamespace(shape=(10, 4)),
+        X_test=object(),
+    )
+    monkeypatch.setattr(
+        "docs.projects.regression.code.search.train_model",
+        lambda *_args: pytest.fail("treinamento não deveria ser iniciado"),
+    )
+    with pytest.raises(SearchContractError, match="campos de teste.*X_test"):
+        run_search(prepared, EXPERIMENTS[:8])
+
+
 def test_search_prepares_data_once_and_breaks_mae_ties_by_id(monkeypatch):
     prepared = SimpleNamespace(X_train=SimpleNamespace(shape=(10, 4)))
     calls = {"load": 0, "prepare": 0, "train": 0}

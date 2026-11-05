@@ -17,6 +17,7 @@ python -m docs.projects.regression.code.data --check
 python -m docs.projects.regression.code.baselines --check
 python -m docs.projects.regression.code.train --check
 python -m docs.projects.regression.code.search --check
+python -m docs.projects.regression.code.final_config --check
 pytest -q
 mkdocs build --strict
 mkdocs serve
@@ -45,6 +46,10 @@ A busca de hiperparâmetros compara 12 configurações fixas com
 `python -m docs.projects.regression.code.search --write-results`. O comando
 `--check` repete a busca em CPU e confere os resultados versionados; ambos
 usam somente treino e validação.
+
+A configuração escolhida fica congelada em `final_config.json`. O comando
+`python -m docs.projects.regression.code.final_config --check` confere sua
+correspondência com a busca sem retreinar a rede nem acessar o teste.
 
 Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
 evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode

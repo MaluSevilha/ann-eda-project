@@ -163,6 +163,19 @@ def _validate_experiments(experiments: Sequence[ExperimentConfig]) -> None:
         raise ValueError("Os experiment_id da busca devem ser únicos")
 
 
+def _assert_development_only(prepared: object) -> None:
+    """Impede que um objeto com campos de teste entre na busca."""
+
+    fields = getattr(prepared, "__dataclass_fields__", None)
+    names = set(fields) if fields is not None else set(vars(prepared))
+    forbidden = sorted(name for name in names if "test" in name.casefold())
+    if forbidden:
+        raise SearchContractError(
+            "A busca aceita somente dados de desenvolvimento; "
+            f"campos de teste encontrados: {forbidden}"
+        )
+
+
 def run_search(
     prepared: PreparedDevelopmentData | None = None,
     experiments: Sequence[ExperimentConfig] = EXPERIMENTS,
@@ -174,6 +187,7 @@ def run_search(
     _validate_experiments(experiments)
     if prepared is None:
         prepared = prepare_development_data(load_development_splits())
+    _assert_development_only(prepared)
     input_dim = prepared.X_train.shape[1]
     results: list[SearchResult] = []
     for experiment in experiments:

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "status": "frozen",
+  "selection": {
+    "source_artifact": "hyperparameter_search.json",
+    "source_schema_version": 1,
+    "source_rank": 1,
+    "experiment_id": "low_lr_regularized",
+    "selection_split": "validation",
+    "selection_metric": "mae_usd",
+    "test_accessed": false,
+    "validation_metrics_usd": {
+      "mae_usd": 6265.05,
+      "rmse_usd": 9821.37,
+      "r2": 0.87271
+    },
+    "best_epoch_evidence": 31,
+    "stopped_epoch_evidence": 46
+  },
+  "data_contract": {
+    "input_features": 420,
+    "preprocessor_fit_split": "train",
+    "target_statistics_fit_split": "train",
+    "test_locked": true,
+    "test_transformed": false
+  },
+  "model": {
+    "input_dim": 420,
+    "hidden_dims": [
+      128,
+      64
+    ],
+    "activation": "ReLU",
+    "dropout": 0.1,
+    "normalization": "none",
+    "output": "1 linear unit",
+    "hidden_initialization": "kaiming_normal",
+    "output_initialization": "xavier_uniform",
+    "parameter_count": 62209
+  },
+  "target": {
+    "transformation": "log1p",
+    "standardized": true,
+    "fit_split": "train",
+    "metrics_scale": "original_usd"
+  },
+  "training": {
+    "loss": "Huber",
+    "huber_delta": 1.0,
+    "optimizer": "Adam",
+    "learning_rate": 0.0003,
+    "weight_decay": 1e-05,
+    "batch_size": 256,
+    "validation_batch_size": 2048,
+    "max_epochs": 200,
+    "patience": 15,
+    "min_delta_mae_usd": 1.0,
+    "seed": 42,
+    "device": "cpu",
+    "deterministic_algorithms": true,
+    "early_stopping_metric": "validation_mae_usd",
+    "restore_best_weights": true
+  }
+}
