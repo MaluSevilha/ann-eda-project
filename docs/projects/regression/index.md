@@ -186,7 +186,40 @@ liberar o conjunto bloqueado.
 
 ## 5. Avaliação no teste
 
-Pendente
+A configuração foi escolhida e congelada antes desta etapa. A MLP, o Ridge e
+o Dummy foram ajustados nas mesmas 36.565 linhas de treino; somente a MLP usou
+a validação para early stopping. Depois disso, o conjunto bloqueado de 11.740
+programas foi transformado e avaliado uma única vez. O recibo versionado
+registra `test_access_count: 1`.
+
+--8<-- "docs/projects/regression/tables/final_test_metrics.md"
+
+A MLP seed 42 restaurou a época **31**, parou na época **46** e alcançou no
+teste **MAE US$ 6.590,14**, **RMSE US$ 11.215,08** e **R² 0,845054**. O melhor
+baseline continuou sendo o Ridge, com MAE **US$ 8.035,06**. Assim, o limite de
+15% no teste era **US$ 6.829,80**: a MLP ficou US$ **239,66** abaixo dele e
+reduziu o MAE do Ridge em **17,98%**. Portanto, o critério definido na etapa 0
+foi atingido para esta execução.
+
+![Previsões da MLP comparadas aos valores reais no teste](figures/fig03_predicted_vs_actual.png)
+
+O gráfico previsto × real concentra a maior parte dos programas ao redor da
+diagonal, mas mostra compressão nas rendas mais altas: vários valores reais na
+cauda recebem previsões menores. Isso é compatível com regressão em direção à
+média e ajuda a explicar por que o RMSE permanece substancialmente maior que o
+MAE.
+
+![Resíduos da MLP em função das previsões no teste](figures/fig04_residuals_vs_predicted.png)
+
+Os resíduos se espalham mais à medida que a renda prevista cresce. Há erros
+positivos grandes — subestimações — entre os programas de maior renda, embora
+também existam superestimações relevantes. Esse padrão de heterocedasticidade
+motiva a análise por faixa do alvo e por categoria na etapa seguinte.
+
+Por decisão de escopo, foi usada **somente a seed 42**. Logo, estes resultados
+não estimam a variação entre inicializações e não atendem ao item da rubrica
+que solicita três ou mais seeds com média ± desvio. O ganho de 17,98% não pode
+ser descrito como estável entre seeds com a evidência disponível.
 
 ## 6. Análise de erros
 

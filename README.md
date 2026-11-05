@@ -18,6 +18,7 @@ python -m docs.projects.regression.code.baselines --check
 python -m docs.projects.regression.code.train --check
 python -m docs.projects.regression.code.search --check
 python -m docs.projects.regression.code.final_config --check
+python -m docs.projects.regression.code.final_evaluation --check
 pytest -q
 mkdocs build --strict
 mkdocs serve
@@ -50,6 +51,11 @@ usam somente treino e validação.
 A configuração escolhida fica congelada em `final_config.json`. O comando
 `python -m docs.projects.regression.code.final_config --check` confere sua
 correspondência com a busca sem retreinar a rede nem acessar o teste.
+
+A avaliação final foi executada uma única vez com a seed 42. O comando
+`python -m docs.projects.regression.code.final_evaluation --check` valida
+offline as métricas, previsões, tabela, figuras e hashes; ele não reabre o
+dataset nem permite sobrescrever os resultados finais.
 
 Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
 evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode

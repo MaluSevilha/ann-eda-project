@@ -196,6 +196,27 @@ def _split_identity(frame: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+def _load_locked_test_for_final_evaluation(
+    path: Path = DATA_PATH,
+    manifest_path: Path = MANIFEST_PATH,
+) -> pd.DataFrame:
+    """Abre o teste somente para a avaliação final e confere sua identidade."""
+
+    if not manifest_path.exists():
+        raise DataContractError(f"Manifesto ausente em {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected = manifest.get("splits", {}).get("test_locked")
+    if not isinstance(expected, dict):
+        raise DataContractError("Manifesto não contém a identidade do teste bloqueado")
+    _train, _validation, locked_test = _split_all(_load_modeling_data(path))
+    observed = _split_identity(locked_test)
+    if observed != expected:
+        raise DataContractError(
+            f"Identidade do teste divergente: esperado={expected}, observado={observed}"
+        )
+    return locked_test
+
+
 def build_manifest(path: Path = DATA_PATH) -> dict[str, Any]:
     """Calcula identidades dos splits e invariantes do desenvolvimento."""
 
