@@ -19,6 +19,7 @@ python -m docs.projects.regression.code.train --check
 python -m docs.projects.regression.code.search --check
 python -m docs.projects.regression.code.final_config --check
 python -m docs.projects.regression.code.final_evaluation --check
+python -m docs.projects.regression.code.error_analysis --check
 pytest -q
 mkdocs build --strict
 mkdocs serve
@@ -56,6 +57,11 @@ A avaliação final foi executada uma única vez com a seed 42. O comando
 `python -m docs.projects.regression.code.final_evaluation --check` valida
 offline as métricas, previsões, tabela, figuras e hashes; ele não reabre o
 dataset nem permite sobrescrever os resultados finais.
+
+A análise de erros usa somente as previsões finais já versionadas; importância
+por permutação e ablação rodam na validação. Use `--write-analysis` para
+regenerar seus artefatos e `--check` para reproduzir e conferir a análise sem
+reabrir o teste.
 
 Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
 evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode

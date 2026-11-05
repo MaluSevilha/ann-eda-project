@@ -223,7 +223,91 @@ ser descrito como estável entre seeds com a evidência disponível.
 
 ## 6. Análise de erros
 
-Pendente
+Esta etapa não reabre o teste: os erros abaixo são calculados a partir das
+previsões finais já congeladas. Para evitar faixas escolhidas depois de ver os
+resultados, usamos os quartis do alvo no treino registrados na EDA: US$
+46.709, US$ 58.878 e US$ 77.121. Grupos com menos de 100 programas são
+marcados e não sustentam conclusões fortes isoladamente.
+
+### Subgrupos e faixas do alvo
+
+--8<-- "docs/projects/regression/tables/error_by_credential.md"
+
+Os maiores MAEs por credencial aparecem em programas sem credencial (**US$
+16.521,33; n=45**) e certificados de pós-graduação (**US$ 14.611,68; n=92**),
+mas ambos são grupos pequenos. O resultado mais robusto é o de doutorado, com
+**MAE US$ 13.941,77 em 257 programas**. Essas credenciais ocupam regiões mais
+altas e heterogêneas da distribuição de renda e têm menos exemplos; a rede
+tende a trazê-las em direção à média.
+
+--8<-- "docs/projects/regression/tables/error_by_institution_control.md"
+
+Instituições privadas sem fins lucrativos têm MAE de **US$ 8.260,52**, contra
+US$ 6.167,99 nas públicas e US$ 4.868,00 nas privadas com fins lucrativos.
+Como `institution_control` aparece apenas na posição 22 da importância, com
+ΔMAE de US$ 175,45, essa diferença parece refletir sobretudo a composição dos
+programas — mais pós-graduação e rendas altas — e não dependência direta forte
+do modelo nessa categoria.
+
+--8<-- "docs/projects/regression/tables/error_by_target_band.md"
+
+A faixa acima de **US$ 77.121** concentra o maior erro: MAE de **US$
+11.140,35** e resíduo médio positivo de **US$ 6.323,68**, isto é,
+subestimação. Na faixa mais baixa o resíduo médio é negativo em US$ 3.137,83,
+indicando superestimação. O sinal muda ao atravessar a distribuição e confirma
+regressão em direção à média.
+
+![MAE da MLP por credencial, controle e faixa do alvo](figures/fig05_error_subgroups.png)
+
+### Piores exemplos
+
+--8<-- "docs/projects/regression/tables/worst_test_errors.md"
+
+Os cinco maiores erros são subestimações de programas com renda real acima de
+US$ 303 mil, mas previsões entre aproximadamente US$ 132 mil e US$ 170 mil.
+Eles incluem doutorado, mestrado e certificado profissional, em instituições
+públicas e privadas sem fins lucrativos. Portanto, o padrão não parece ser um
+único tipo institucional: são observações extremas em uma cauda pouco
+representada, comprimida pelo aprendizado no alvo em `log1p` e pela tendência
+do modelo a evitar previsões extremas.
+
+### Importância por permutação
+
+A importância foi calculada na **validação**, com três permutações por feature
+original. Cada categórica é embaralhada antes do pipeline, preservando como um
+grupo todas as suas dummies; numéricas também carregam juntas seu valor e o
+indicador de ausência. Valores representam quanto o MAE aumenta ao destruir a
+informação da feature.
+
+![Importância agrupada das quinze principais features](figures/fig06_permutation_importance.png)
+
+--8<-- "docs/projects/regression/tables/permutation_importance.md"
+
+`median_earnings_1yr_usd` domina, com aumento médio de **US$ 11.670,45** no
+MAE permutado. Depois vêm credencial (**US$ 2.048,90**), curso/CIP (**US$
+1.267,74**), tamanho da coorte de um ano (**US$ 1.168,52**) e salário mediano
+da ocupação (**US$ 965,21**). Isso confirma a EDA: renda de um ano tinha
+Spearman ρ=0,887 com o alvo, enquanto curso, credencial e mercado de trabalho
+traziam sinais secundários. Mensalidade out-of-state e tecnologias emergentes
+também aparecem entre as quinze primeiras, coerentes com as associações da
+EDA; controle institucional é bem menos importante diretamente.
+
+### Ablação da renda de primeiro ano
+
+--8<-- "docs/projects/regression/tables/earnings_1yr_ablation.md"
+
+Sem `median_earnings_1yr_usd` — incluindo seu indicador de ausência — a
+largura cai de 420 para 418 features e o MAE de validação sobe de **US$
+6.265,05 para US$ 7.868,25**, piora de **US$ 1.603,19 (25,59%)**. A rede ainda
+aprende com curso, credencial, instituição e ocupação, mas perde uma parte
+substancial da precisão.
+
+O ΔMAE da permutação é muito maior que o da ablação porque embaralhar a renda
+de um ano cria combinações artificiais e quebra sua relação com várias outras
+features; remover a coluna permite que o modelo se reajuste. Assim, a ablação
+é a estimativa mais realista do custo de operar sem essa informação, enquanto
+a permutação mede sua relevância no modelo já treinado. Nenhuma das duas deve
+ser interpretada como efeito causal.
 
 ## 7. Conclusão
 

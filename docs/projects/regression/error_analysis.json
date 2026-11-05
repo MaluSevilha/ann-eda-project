@@ -1,0 +1,621 @@
+{
+  "schema_version": 1,
+  "test_source": {
+    "artifact": "final_test_predictions.csv",
+    "sha256": "7dc31cbb768cdaa55100a5d9ed4b901cb852a6e4b4694fb18fdd04aa6f7cf641",
+    "rows": 11740,
+    "raw_test_reopened": false
+  },
+  "group_policy": {
+    "small_group_threshold": 100
+  },
+  "target_band_policy": {
+    "source": "quartis do treino registrados na EDA",
+    "cut_points_usd": [
+      46709,
+      58878,
+      77121
+    ],
+    "labels": [
+      "até US$ 46.709",
+      "US$ 46.709–58.878",
+      "US$ 58.878–77.121",
+      "acima de US$ 77.121"
+    ]
+  },
+  "error_by_credential": [
+    {
+      "group": "Non-Credential Program (Preparatory Coursework/Teacher Certification)",
+      "count": 45,
+      "mae_usd": 16521.33,
+      "rmse_usd": 21663.28,
+      "median_absolute_error_usd": 13508.82,
+      "mean_residual_usd": 10535.98,
+      "small_group": true
+    },
+    {
+      "group": "Graduate/Professional Certificate",
+      "count": 92,
+      "mae_usd": 14611.68,
+      "rmse_usd": 28992.19,
+      "median_absolute_error_usd": 8538.01,
+      "mean_residual_usd": 4544.2,
+      "small_group": true
+    },
+    {
+      "group": "Doctoral Degree",
+      "count": 257,
+      "mae_usd": 13941.77,
+      "rmse_usd": 22980.22,
+      "median_absolute_error_usd": 8616.87,
+      "mean_residual_usd": 3594.93,
+      "small_group": false
+    },
+    {
+      "group": "Post-baccalaureate Certificate",
+      "count": 32,
+      "mae_usd": 10844.72,
+      "rmse_usd": 14053.51,
+      "median_absolute_error_usd": 9479.55,
+      "mean_residual_usd": -5052.57,
+      "small_group": true
+    },
+    {
+      "group": "First Professional Degree",
+      "count": 154,
+      "mae_usd": 10819.23,
+      "rmse_usd": 18211.98,
+      "median_absolute_error_usd": 6596.51,
+      "mean_residual_usd": 4038.8,
+      "small_group": false
+    },
+    {
+      "group": "Master's Degree",
+      "count": 2227,
+      "mae_usd": 8531.08,
+      "rmse_usd": 15806.72,
+      "median_absolute_error_usd": 5020.14,
+      "mean_residual_usd": 2005.79,
+      "small_group": false
+    },
+    {
+      "group": "Associate's Degree",
+      "count": 1713,
+      "mae_usd": 6015.03,
+      "rmse_usd": 8832.78,
+      "median_absolute_error_usd": 4139.59,
+      "mean_residual_usd": 625.06,
+      "small_group": false
+    },
+    {
+      "group": "Bachelor's Degree",
+      "count": 5853,
+      "mae_usd": 5677.71,
+      "rmse_usd": 8359.17,
+      "median_absolute_error_usd": 4032.35,
+      "mean_residual_usd": 1215.82,
+      "small_group": false
+    },
+    {
+      "group": "Undergraduate Certificate or Diploma",
+      "count": 1367,
+      "mae_usd": 5230.54,
+      "rmse_usd": 7932.61,
+      "median_absolute_error_usd": 3459.74,
+      "mean_residual_usd": 81.31,
+      "small_group": false
+    }
+  ],
+  "error_by_institution_control": [
+    {
+      "group": "Private, nonprofit",
+      "count": 3250,
+      "mae_usd": 8260.52,
+      "rmse_usd": 14478.93,
+      "median_absolute_error_usd": 5163.91,
+      "mean_residual_usd": 1562.34,
+      "small_group": false
+    },
+    {
+      "group": "Public",
+      "count": 7071,
+      "mae_usd": 6167.99,
+      "rmse_usd": 9957.64,
+      "median_absolute_error_usd": 4133.03,
+      "mean_residual_usd": 1306.92,
+      "small_group": false
+    },
+    {
+      "group": "Private, for-profit",
+      "count": 1419,
+      "mae_usd": 4868.0,
+      "rmse_usd": 8147.01,
+      "median_absolute_error_usd": 3174.13,
+      "mean_residual_usd": 509.14,
+      "small_group": false
+    }
+  ],
+  "error_by_target_band": [
+    {
+      "group": "até US$ 46.709",
+      "count": 2729,
+      "mae_usd": 4774.9,
+      "rmse_usd": 6726.85,
+      "median_absolute_error_usd": 3524.56,
+      "mean_residual_usd": -3137.83,
+      "small_group": false
+    },
+    {
+      "group": "US$ 46.709–58.878",
+      "count": 3003,
+      "mae_usd": 4382.97,
+      "rmse_usd": 6072.34,
+      "median_absolute_error_usd": 3343.44,
+      "mean_residual_usd": -427.19,
+      "small_group": false
+    },
+    {
+      "group": "US$ 58.878–77.121",
+      "count": 2987,
+      "mae_usd": 5865.58,
+      "rmse_usd": 7896.26,
+      "median_absolute_error_usd": 4388.65,
+      "mean_residual_usd": 1936.21,
+      "small_group": false
+    },
+    {
+      "group": "acima de US$ 77.121",
+      "count": 3021,
+      "mae_usd": 11140.35,
+      "rmse_usd": 18697.87,
+      "median_absolute_error_usd": 6963.82,
+      "mean_residual_usd": 6323.68,
+      "small_group": false
+    }
+  ],
+  "worst_examples": [
+    {
+      "program_id": "147244-51.38-6",
+      "credential_name": "Doctoral Degree",
+      "institution_control": "Private, nonprofit",
+      "actual_usd": 324655.0,
+      "predicted_usd": 143222.35,
+      "residual_usd": 181432.65,
+      "absolute_error_usd": 181432.65
+    },
+    {
+      "program_id": "162928-13.99-5",
+      "credential_name": "Master's Degree",
+      "institution_control": "Private, nonprofit",
+      "actual_usd": 303202.0,
+      "predicted_usd": 132137.19,
+      "residual_usd": 171064.81,
+      "absolute_error_usd": 171064.81
+    },
+    {
+      "program_id": "162928-13.99-8",
+      "credential_name": "Graduate/Professional Certificate",
+      "institution_control": "Private, nonprofit",
+      "actual_usd": 306793.0,
+      "predicted_usd": 136900.8,
+      "residual_usd": 169892.2,
+      "absolute_error_usd": 169892.2
+    },
+    {
+      "program_id": "234030-51.05-5",
+      "credential_name": "Master's Degree",
+      "institution_control": "Public",
+      "actual_usd": 336392.0,
+      "predicted_usd": 170259.54,
+      "residual_usd": 166132.46,
+      "absolute_error_usd": 166132.46
+    },
+    {
+      "program_id": "204796-51.04-5",
+      "credential_name": "Master's Degree",
+      "institution_control": "Public",
+      "actual_usd": 329225.0,
+      "predicted_usd": 169164.89,
+      "residual_usd": 160060.11,
+      "absolute_error_usd": 160060.11
+    },
+    {
+      "program_id": "190150-22.02-8",
+      "credential_name": "Graduate/Professional Certificate",
+      "institution_control": "Private, nonprofit",
+      "actual_usd": 312330.0,
+      "predicted_usd": 166456.22,
+      "residual_usd": 145873.78,
+      "absolute_error_usd": 145873.78
+    },
+    {
+      "program_id": "204796-01.80-5",
+      "credential_name": "Master's Degree",
+      "institution_control": "Public",
+      "actual_usd": 263241.0,
+      "predicted_usd": 125433.81,
+      "residual_usd": 137807.19,
+      "absolute_error_usd": 137807.19
+    },
+    {
+      "program_id": "228723-51.05-5",
+      "credential_name": "Master's Degree",
+      "institution_control": "Public",
+      "actual_usd": 285291.0,
+      "predicted_usd": 155491.09,
+      "residual_usd": 129799.91,
+      "absolute_error_usd": 129799.91
+    },
+    {
+      "program_id": "110662-14.09-3",
+      "credential_name": "Bachelor's Degree",
+      "institution_control": "Public",
+      "actual_usd": 228705.0,
+      "predicted_usd": 107320.49,
+      "residual_usd": 121384.51,
+      "absolute_error_usd": 121384.51
+    },
+    {
+      "program_id": "179159-51.05-5",
+      "credential_name": "Master's Degree",
+      "institution_control": "Private, nonprofit",
+      "actual_usd": 313933.0,
+      "predicted_usd": 193878.14,
+      "residual_usd": 120054.86,
+      "absolute_error_usd": 120054.86
+    }
+  ],
+  "permutation_importance": {
+    "split": "validation",
+    "metric": "increase_in_mae_usd",
+    "seed": 42,
+    "repeats": 3,
+    "baseline_mae_usd": 6265.05,
+    "features": [
+      {
+        "feature": "median_earnings_1yr_usd",
+        "delta_mae_mean_usd": 11670.45,
+        "delta_mae_std_usd": 158.44,
+        "delta_mae_repeats_usd": [
+          11768.99,
+          11487.68,
+          11754.67
+        ]
+      },
+      {
+        "feature": "credential_name",
+        "delta_mae_mean_usd": 2048.9,
+        "delta_mae_std_usd": 49.82,
+        "delta_mae_repeats_usd": [
+          1991.58,
+          2081.71,
+          2073.42
+        ]
+      },
+      {
+        "feature": "cip_title",
+        "delta_mae_mean_usd": 1267.74,
+        "delta_mae_std_usd": 25.18,
+        "delta_mae_repeats_usd": [
+          1282.9,
+          1238.68,
+          1281.64
+        ]
+      },
+      {
+        "feature": "earnings_cohort_size_1yr",
+        "delta_mae_mean_usd": 1168.52,
+        "delta_mae_std_usd": 6.92,
+        "delta_mae_repeats_usd": [
+          1175.98,
+          1167.28,
+          1162.3
+        ]
+      },
+      {
+        "feature": "occupation_median_wage_2024_usd",
+        "delta_mae_mean_usd": 965.21,
+        "delta_mae_std_usd": 30.47,
+        "delta_mae_repeats_usd": [
+          980.49,
+          985.02,
+          930.13
+        ]
+      },
+      {
+        "feature": "largest_linked_occupation",
+        "delta_mae_mean_usd": 707.32,
+        "delta_mae_std_usd": 10.79,
+        "delta_mae_repeats_usd": [
+          716.79,
+          709.59,
+          695.58
+        ]
+      },
+      {
+        "feature": "occupation_growth_pct_max",
+        "delta_mae_mean_usd": 605.76,
+        "delta_mae_std_usd": 24.28,
+        "delta_mae_repeats_usd": [
+          578.42,
+          624.8,
+          614.05
+        ]
+      },
+      {
+        "feature": "institution_tuition_out_state_usd",
+        "delta_mae_mean_usd": 564.45,
+        "delta_mae_std_usd": 8.12,
+        "delta_mae_repeats_usd": [
+          561.7,
+          558.06,
+          573.59
+        ]
+      },
+      {
+        "feature": "occupation_typical_entry_education",
+        "delta_mae_mean_usd": 486.26,
+        "delta_mae_std_usd": 27.76,
+        "delta_mae_repeats_usd": [
+          510.19,
+          492.78,
+          455.82
+        ]
+      },
+      {
+        "feature": "institution_state",
+        "delta_mae_mean_usd": 479.63,
+        "delta_mae_std_usd": 15.36,
+        "delta_mae_repeats_usd": [
+          479.49,
+          464.33,
+          495.05
+        ]
+      },
+      {
+        "feature": "institution_avg_sat",
+        "delta_mae_mean_usd": 355.78,
+        "delta_mae_std_usd": 27.48,
+        "delta_mae_repeats_usd": [
+          326.23,
+          360.54,
+          380.56
+        ]
+      },
+      {
+        "feature": "occupation_annual_openings_thousands",
+        "delta_mae_mean_usd": 355.56,
+        "delta_mae_std_usd": 15.12,
+        "delta_mae_repeats_usd": [
+          372.82,
+          349.14,
+          344.7
+        ]
+      },
+      {
+        "feature": "hot_technologies_mean_per_occupation",
+        "delta_mae_mean_usd": 322.3,
+        "delta_mae_std_usd": 8.08,
+        "delta_mae_repeats_usd": [
+          323.32,
+          329.83,
+          313.77
+        ]
+      },
+      {
+        "feature": "institution_latitude",
+        "delta_mae_mean_usd": 291.67,
+        "delta_mae_std_usd": 17.41,
+        "delta_mae_repeats_usd": [
+          292.06,
+          274.07,
+          308.89
+        ]
+      },
+      {
+        "feature": "institution_undergrad_enrollment",
+        "delta_mae_mean_usd": 258.37,
+        "delta_mae_std_usd": 15.66,
+        "delta_mae_repeats_usd": [
+          244.37,
+          255.46,
+          275.27
+        ]
+      },
+      {
+        "feature": "ai_tools_max_per_occupation",
+        "delta_mae_mean_usd": 225.84,
+        "delta_mae_std_usd": 5.77,
+        "delta_mae_repeats_usd": [
+          232.51,
+          222.45,
+          222.57
+        ]
+      },
+      {
+        "feature": "institution_tuition_in_state_usd",
+        "delta_mae_mean_usd": 224.45,
+        "delta_mae_std_usd": 13.72,
+        "delta_mae_repeats_usd": [
+          218.88,
+          214.39,
+          240.08
+        ]
+      },
+      {
+        "feature": "occupation_growth_pct_2024_34",
+        "delta_mae_mean_usd": 223.05,
+        "delta_mae_std_usd": 3.41,
+        "delta_mae_repeats_usd": [
+          226.98,
+          221.32,
+          220.84
+        ]
+      },
+      {
+        "feature": "expert_system_occupation_share",
+        "delta_mae_mean_usd": 215.66,
+        "delta_mae_std_usd": 9.92,
+        "delta_mae_repeats_usd": [
+          212.93,
+          207.39,
+          226.66
+        ]
+      },
+      {
+        "feature": "occupation_employment_2024_thousands",
+        "delta_mae_mean_usd": 201.14,
+        "delta_mae_std_usd": 24.85,
+        "delta_mae_repeats_usd": [
+          206.21,
+          174.14,
+          223.06
+        ]
+      },
+      {
+        "feature": "institution_admission_rate",
+        "delta_mae_mean_usd": 191.88,
+        "delta_mae_std_usd": 20.2,
+        "delta_mae_repeats_usd": [
+          169.2,
+          207.96,
+          198.48
+        ]
+      },
+      {
+        "feature": "institution_control",
+        "delta_mae_mean_usd": 175.45,
+        "delta_mae_std_usd": 15.74,
+        "delta_mae_repeats_usd": [
+          159.88,
+          191.36,
+          175.11
+        ]
+      },
+      {
+        "feature": "institution_longitude",
+        "delta_mae_mean_usd": 164.3,
+        "delta_mae_std_usd": 0.73,
+        "delta_mae_repeats_usd": [
+          165.03,
+          164.29,
+          163.56
+        ]
+      },
+      {
+        "feature": "linked_occupations_count",
+        "delta_mae_mean_usd": 156.96,
+        "delta_mae_std_usd": 5.63,
+        "delta_mae_repeats_usd": [
+          161.81,
+          158.3,
+          150.79
+        ]
+      },
+      {
+        "feature": "is_main_campus",
+        "delta_mae_mean_usd": 154.25,
+        "delta_mae_std_usd": 7.46,
+        "delta_mae_repeats_usd": [
+          157.89,
+          159.2,
+          145.67
+        ]
+      },
+      {
+        "feature": "debt_borrower_count",
+        "delta_mae_mean_usd": 148.12,
+        "delta_mae_std_usd": 1.08,
+        "delta_mae_repeats_usd": [
+          148.63,
+          146.89,
+          148.85
+        ]
+      },
+      {
+        "feature": "awards_year1",
+        "delta_mae_mean_usd": 147.83,
+        "delta_mae_std_usd": 9.22,
+        "delta_mae_repeats_usd": [
+          148.21,
+          138.43,
+          156.86
+        ]
+      },
+      {
+        "feature": "ai_software_occupation_share",
+        "delta_mae_mean_usd": 135.59,
+        "delta_mae_std_usd": 7.64,
+        "delta_mae_repeats_usd": [
+          136.59,
+          142.68,
+          127.5
+        ]
+      },
+      {
+        "feature": "awards_year2",
+        "delta_mae_mean_usd": 132.06,
+        "delta_mae_std_usd": 11.69,
+        "delta_mae_repeats_usd": [
+          119.21,
+          134.91,
+          142.06
+        ]
+      },
+      {
+        "feature": "median_debt_usd",
+        "delta_mae_mean_usd": 123.6,
+        "delta_mae_std_usd": 21.1,
+        "delta_mae_repeats_usd": [
+          107.92,
+          147.59,
+          115.3
+        ]
+      },
+      {
+        "feature": "institution_is_hbcu",
+        "delta_mae_mean_usd": 99.69,
+        "delta_mae_std_usd": 9.25,
+        "delta_mae_repeats_usd": [
+          94.86,
+          93.86,
+          110.35
+        ]
+      },
+      {
+        "feature": "outcomes_shared_across_campuses",
+        "delta_mae_mean_usd": 63.18,
+        "delta_mae_std_usd": 2.53,
+        "delta_mae_repeats_usd": [
+          60.54,
+          63.42,
+          65.59
+        ]
+      },
+      {
+        "feature": "distance_education",
+        "delta_mae_mean_usd": 58.21,
+        "delta_mae_std_usd": 6.36,
+        "delta_mae_repeats_usd": [
+          53.17,
+          56.1,
+          65.36
+        ]
+      }
+    ]
+  },
+  "ablation": {
+    "split": "validation",
+    "removed_feature": "median_earnings_1yr_usd",
+    "full_input_dim": 420,
+    "ablated_input_dim": 418,
+    "full_mae_usd": 6265.05,
+    "ablated_mae_usd": 7868.25,
+    "delta_mae_usd": 1603.19,
+    "relative_change_pct": 25.59,
+    "ablated_rmse_usd": 12218.9,
+    "ablated_r2": 0.802978,
+    "best_epoch": 33,
+    "stopped_epoch": 48
+  }
+}

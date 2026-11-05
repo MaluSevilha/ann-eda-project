@@ -1,0 +1,35 @@
+| Posição | Feature original | Δ MAE médio (US$) | Desvio (US$) | Repetições (US$) |
+|---:|---|---:|---:|---|
+| 1 | `median_earnings_1yr_usd` | 11.670,45 | 158,44 | 11.768,99; 11.487,68; 11.754,67 |
+| 2 | `credential_name` | 2.048,90 | 49,82 | 1.991,58; 2.081,71; 2.073,42 |
+| 3 | `cip_title` | 1.267,74 | 25,18 | 1.282,90; 1.238,68; 1.281,64 |
+| 4 | `earnings_cohort_size_1yr` | 1.168,52 | 6,92 | 1.175,98; 1.167,28; 1.162,30 |
+| 5 | `occupation_median_wage_2024_usd` | 965,21 | 30,47 | 980,49; 985,02; 930,13 |
+| 6 | `largest_linked_occupation` | 707,32 | 10,79 | 716,79; 709,59; 695,58 |
+| 7 | `occupation_growth_pct_max` | 605,76 | 24,28 | 578,42; 624,80; 614,05 |
+| 8 | `institution_tuition_out_state_usd` | 564,45 | 8,12 | 561,70; 558,06; 573,59 |
+| 9 | `occupation_typical_entry_education` | 486,26 | 27,76 | 510,19; 492,78; 455,82 |
+| 10 | `institution_state` | 479,63 | 15,36 | 479,49; 464,33; 495,05 |
+| 11 | `institution_avg_sat` | 355,78 | 27,48 | 326,23; 360,54; 380,56 |
+| 12 | `occupation_annual_openings_thousands` | 355,56 | 15,12 | 372,82; 349,14; 344,70 |
+| 13 | `hot_technologies_mean_per_occupation` | 322,30 | 8,08 | 323,32; 329,83; 313,77 |
+| 14 | `institution_latitude` | 291,67 | 17,41 | 292,06; 274,07; 308,89 |
+| 15 | `institution_undergrad_enrollment` | 258,37 | 15,66 | 244,37; 255,46; 275,27 |
+| 16 | `ai_tools_max_per_occupation` | 225,84 | 5,77 | 232,51; 222,45; 222,57 |
+| 17 | `institution_tuition_in_state_usd` | 224,45 | 13,72 | 218,88; 214,39; 240,08 |
+| 18 | `occupation_growth_pct_2024_34` | 223,05 | 3,41 | 226,98; 221,32; 220,84 |
+| 19 | `expert_system_occupation_share` | 215,66 | 9,92 | 212,93; 207,39; 226,66 |
+| 20 | `occupation_employment_2024_thousands` | 201,14 | 24,85 | 206,21; 174,14; 223,06 |
+| 21 | `institution_admission_rate` | 191,88 | 20,20 | 169,20; 207,96; 198,48 |
+| 22 | `institution_control` | 175,45 | 15,74 | 159,88; 191,36; 175,11 |
+| 23 | `institution_longitude` | 164,30 | 0,73 | 165,03; 164,29; 163,56 |
+| 24 | `linked_occupations_count` | 156,96 | 5,63 | 161,81; 158,30; 150,79 |
+| 25 | `is_main_campus` | 154,25 | 7,46 | 157,89; 159,20; 145,67 |
+| 26 | `debt_borrower_count` | 148,12 | 1,08 | 148,63; 146,89; 148,85 |
+| 27 | `awards_year1` | 147,83 | 9,22 | 148,21; 138,43; 156,86 |
+| 28 | `ai_software_occupation_share` | 135,59 | 7,64 | 136,59; 142,68; 127,50 |
+| 29 | `awards_year2` | 132,06 | 11,69 | 119,21; 134,91; 142,06 |
+| 30 | `median_debt_usd` | 123,60 | 21,10 | 107,92; 147,59; 115,30 |
+| 31 | `institution_is_hbcu` | 99,69 | 9,25 | 94,86; 93,86; 110,35 |
+| 32 | `outcomes_shared_across_campuses` | 63,18 | 2,53 | 60,54; 63,42; 65,59 |
+| 33 | `distance_education` | 58,21 | 6,36 | 53,17; 56,10; 65,36 |
