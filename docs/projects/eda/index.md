@@ -1,7 +1,7 @@
 ---
 project: eda
 task: regression
-dataset: https://www.kaggle.com/datasets/kylefengkfeng209/college-majors-2026-earnings-debt-jobs-ai
+dataset: https://www.kaggle.com/datasets/srisyra02/college-major-career-analytics-dataset
 team:
   - Maria Luiza Sevilha
   - Vinicus Barreto Pomilio
@@ -14,7 +14,7 @@ ai_use: "OpenAI Codex e Anthropic ClaudeCode foram usados no sketch do codigo, e
 
 Este projeto prepara uma tarefa de **regressão**. O objetivo é prever `median_earnings_4yr_usd`: a renda anual mediana de concluintes, medida 4 anos depois da conclusão do curso. Cada granularidade observada na base é de um **programa**: combinação de uma instituição, um curso (código CIP) e um nível de credencial.
 
-- **Dataset:** [College Majors 2026: Earnings, Debt, Jobs, AI](https://www.kaggle.com/datasets/kylefengkfeng209/college-majors-2026-earnings-debt-jobs-ai), do Kaggle.
+- **Dataset:** [College Major Career Analytics 2026](https://www.kaggle.com/datasets/srisyra02/college-major-career-analytics-dataset), do Kaggle.
 - **Tamanho:** 227.980 linhas × 72 colunas.
 - **Origem:** integração pública de College Scorecard, IPEDS, NCES CIP–SOC,
   BLS e O\*NET. A semântica dos dados de renda segue a

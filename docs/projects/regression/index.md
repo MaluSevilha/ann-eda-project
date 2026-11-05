@@ -1,6 +1,6 @@
 ---
 project: regression
-dataset: https://www.kaggle.com/datasets/kylefengkfeng209/college-majors-2026-earnings-debt-jobs-ai
+dataset: https://www.kaggle.com/datasets/srisyra02/college-major-career-analytics-dataset
 team:
   - Maria Luiza Sevilha
   - Vinicus Barreto Pomilio
@@ -311,4 +311,53 @@ ser interpretada como efeito causal.
 
 ## 7. Conclusão
 
-Pendente
+Dentro desta tarefa, **a MLP valeu a pena em precisão preditiva**. Seu MAE de
+teste foi **US$ 6.590,14**, contra **US$ 8.035,06** do Ridge: redução de
+**17,98%**, superior ao critério de 15% registrado antes do treinamento. O
+ganho veio de relações não lineares entre renda anterior, curso, credencial,
+instituição e ocupação que o baseline linear não capturou por completo.
+
+Esse resultado não autoriza usar a previsão como garantia de renda individual
+nem como ranking automático de cursos. A unidade do modelo é um programa e o
+alvo é uma mediana de coorte; trajetórias individuais dependem de região,
+experiência, setor, condições econômicas e muitas informações ausentes da
+base. Uma previsão errada poderia induzir estudantes a escolher ou abandonar
+um curso e levar gestores a distribuir recursos de modo inadequado. Portanto,
+o modelo só deve apoiar análises agregadas, acompanhado dos dados observados,
+de revisão humana e de monitoramento dos erros por subgrupo.
+
+As limitações mais importantes são:
+
+- somente a seed 42 foi avaliada, então não medimos variação entre
+  inicializações e não atendemos ao requisito de média ± desvio;
+- **74,51%** dos alvos da base original estavam suprimidos, principalmente por
+  regras de privacidade ligadas ao tamanho da coorte; o domínio aprendido
+  representa programas com renda divulgada e pode não generalizar para
+  programas pequenos ou suprimidos;
+- a rede subestima a cauda de renda e não fornece intervalo de incerteza;
+- a precisão depende fortemente da renda de primeiro ano, informação que só
+  existe depois da conclusão e limita usos prospectivos no momento da
+  matrícula;
+- a avaliação usa um único recorte temporal e não mede mudança do mercado de
+  trabalho; além disso, importância e correlação são associações, não efeitos
+  causais.
+
+Com mais tempo, executaríamos pelo menos três seeds, adicionaríamos intervalos
+por regressão quantílica ou ensembles, trataríamos explicitamente a cauda,
+compararíamos uma versão operacional sem renda de primeiro ano e faríamos
+validação temporal externa. Antes de qualquer uso real, também seriam
+necessárias auditorias periódicas de calibração e erro por credencial,
+controle institucional e faixa de renda.
+
+### Resumo dos resultados
+
+| # | Resumo | Valor |
+|---:|---|---|
+| 1 | Dataset, tarefa, alvo e métrica principal | College Majors 2026; regressão de `median_earnings_4yr_usd`; MAE em dólares |
+| 2 | Treino · validação · teste (linhas) | 36.565 · 9.758 · 11.740 |
+| 3 | Melhor baseline e sua métrica no teste | Ridge `alpha=1`; MAE US$ 8.035,06 |
+| 4 | Rede escolhida: camadas × unidades, parâmetros e regularização | 420→128→64→1; 62.209 parâmetros; dropout 0,10 e weight decay `1e-5` |
+| 5 | Otimizador, learning rate, batch e época de parada | Adam; `3e-4`; batch 256; parada 46, melhores pesos da época 31 |
+| 6 | Métrica principal da rede no teste | MAE US$ 6.590,14 com seed 42; média ± desvio indisponível |
+| 7 | Critério de sucesso atingido? | Sim; MAE 17,98% menor que o Ridge, acima dos 15% exigidos |
+| 8 | Subgrupo com maior erro | Programas sem credencial; MAE US$ 16.521,33; `n=45`, grupo pequeno |
