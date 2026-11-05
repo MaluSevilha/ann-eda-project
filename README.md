@@ -16,6 +16,7 @@ python docs/projects/eda/code/analysis.py
 python -m docs.projects.regression.code.data --check
 python -m docs.projects.regression.code.baselines --check
 python -m docs.projects.regression.code.train --check
+python -m docs.projects.regression.code.search --check
 pytest -q
 mkdocs build --strict
 mkdocs serve
@@ -39,6 +40,11 @@ artefatos versionados; `--check` recalcula e confere os resultados existentes.
 A MLP de referência também usa comandos separados: `--write-reference`
 regenera o histórico e a figura em CPU, enquanto `--check` retreina com a
 mesma semente e verifica a reprodução sem acessar o teste.
+
+A busca de hiperparâmetros compara 12 configurações fixas com
+`python -m docs.projects.regression.code.search --write-results`. O comando
+`--check` repete a busca em CPU e confere os resultados versionados; ambos
+usam somente treino e validação.
 
 Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
 evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode

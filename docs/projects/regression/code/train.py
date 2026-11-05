@@ -365,8 +365,12 @@ def result_payload(result: TrainingResult) -> dict[str, Any]:
             "parameters_per_training_row": round(
                 result.parameter_count / result.training_rows, 6
             ),
-            "dropout": 0.0,
-            "normalization": None,
+            "dropout": result.model_config.dropout,
+            "normalization": (
+                None
+                if result.model_config.normalization == "none"
+                else result.model_config.normalization
+            ),
         },
         "training": asdict(result.training_config),
         "target_transformer": {

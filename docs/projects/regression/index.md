@@ -128,7 +128,45 @@ o teste só será aberto na etapa 5.
 
 ## 4. Regularização e hiperparâmetros
 
-Pendente
+A busca foi declarada antes da execução com **12 configurações** e manteve o
+mesmo protocolo da referência: Huber, alvo em `log1p`, batch 256, no máximo
+200 épocas, early stopping, CPU e semente 42. Comparamos diretamente a rede
+sem regularização com dropout, weight decay e LayerNorm. A grade também variou
+learning rate, largura e profundidade; todas as escolhas foram feitas somente
+pelo MAE de validação.
+
+--8<-- "docs/projects/regression/tables/hyperparameter_search.md"
+
+![MAE das configurações e curvas das técnicas de regularização](figures/fig02_regularization_search.png)
+
+Todas as 12 configurações terminaram sem falhas. Dropout foi a intervenção
+isolada mais efetiva: com taxa 0,10, o MAE caiu de **US$ 6.566,01** para **US$
+6.311,16**. Weight decay isolado teve efeito bem menor: `1e-4` chegou a **US$
+6.525,00**, enquanto `1e-5` praticamente empatou com a referência (**US$
+6.563,99**). LayerNorm não ajudou neste problema tabular e obteve **US$
+6.645,81** sem weight decay, resultado pior que o controle.
+
+A largura adicional também não trouxe ganho: a rede com 140.801 parâmetros
+ficou em US$ 6.378,43. A versão estreita, com apenas 29.057 parâmetros, chegou
+a US$ 6.342,91 e superou a versão larga, sinal de que aumentar capacidade não
+era a principal necessidade. A rede profunda ficou entre elas, com US$
+6.374,71. Esses resultados são coerentes com o overfitting observado na
+referência, e não com underfitting por falta de parâmetros.
+
+O vencedor provisório foi **`low_lr_regularized`**: arquitetura 420 → 128 → 64
+→ 1, dropout 0,10, weight decay `1e-5` e learning rate `3e-4`. Ele alcançou
+**MAE US$ 6.265,05**, **RMSE US$ 9.821,37** e **R² 0,872710** na época 31,
+parando na época 46. Isso reduz o MAE da referência em **4,58%** e o do Ridge
+em **19,82%**, ficando US$ **376,76** abaixo do critério preliminar.
+
+As curvas mostram por que o learning rate menor foi útil: o vencedor convergiu
+mais lentamente e atingiu sua melhor época depois das outras configurações.
+Mesmo com dropout, após a época 31 a loss de treino caiu de 0,04761 para
+0,04199, enquanto a de validação subiu de 0,05594 para 0,05697; portanto,
+early stopping ainda é necessário. LayerNorm apresentou oscilações maiores e
+começou a piorar cedo, com melhor MAE já na época 5. A configuração vencedora
+é apenas uma recomendação desta busca; seu congelamento ocorre na próxima
+etapa, ainda sem acessar o teste.
 
 ## 5. Avaliação no teste
 
