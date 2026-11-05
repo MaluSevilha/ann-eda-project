@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "selection_split": "validation",
+  "test_accessed": false,
+  "changes_official_baseline_or_success_criterion": false,
+  "official_ridge_dollars": {
+    "model": "Ridge",
+    "configuration": "alpha=1",
+    "mae_usd": 7813.89,
+    "rmse_usd": 11795.41,
+    "r2": 0.816399
+  },
+  "mlp_final": {
+    "mae_usd": 6265.05,
+    "rmse_usd": 9821.37,
+    "r2": 0.87271
+  },
+  "ridge_log1p_grid": [
+    {
+      "alpha": 10.0,
+      "mae_usd": 7658.6,
+      "rmse_usd": 12021.95,
+      "r2": 0.809278
+    },
+    {
+      "alpha": 1.0,
+      "mae_usd": 7659.47,
+      "rmse_usd": 11951.38,
+      "r2": 0.811511
+    },
+    {
+      "alpha": 0.1,
+      "mae_usd": 7664.1,
+      "rmse_usd": 11962.33,
+      "r2": 0.811165
+    },
+    {
+      "alpha": 0.01,
+      "mae_usd": 7667.15,
+      "rmse_usd": 11967.98,
+      "r2": 0.810987
+    },
+    {
+      "alpha": 0.001,
+      "mae_usd": 7667.51,
+      "rmse_usd": 11968.67,
+      "r2": 0.810965
+    },
+    {
+      "alpha": 100.0,
+      "mae_usd": 7758.9,
+      "rmse_usd": 12379.66,
+      "r2": 0.79776
+    },
+    {
+      "alpha": 1000.0,
+      "mae_usd": 8256.35,
+      "rmse_usd": 13177.36,
+      "r2": 0.770857
+    },
+    {
+      "alpha": 10000.0,
+      "mae_usd": 9125.37,
+      "rmse_usd": 14315.27,
+      "r2": 0.729574
+    }
+  ],
+  "mae_gain_official_ridge_to_mlp_usd": 1548.84,
+  "mae_gain_official_ridge_to_ridge_log1p_usd": 155.29,
+  "share_of_mlp_gain_matched_by_log1p_pct": 10.03
+}

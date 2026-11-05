@@ -62,5 +62,6 @@
     "transformed": false,
     "target_statistics_computed": false,
     "predictive_metrics_computed": false
-  }
+  },
+  "test_policy_scope": "Vale para o pipeline de desenvolvimento, que não transforma o teste; os acessos da avaliação final estão em final_test_results.json."
 }

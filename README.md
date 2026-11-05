@@ -1,9 +1,11 @@
-# College Majors 2026 — EDA para regressão
+# College Majors 2026 — EDA e regressão
 
-Projeto de Análise Exploratória de Dados da disciplina de Redes Neurais e Deep
-Learning. O objetivo futuro é estimar `median_earnings_4yr_usd`, a renda mediana
-quatro anos após a conclusão, sem usar variáveis derivadas do alvo nem
-informações posteriores.
+Projetos da disciplina de Redes Neurais e Deep Learning. O objetivo é estimar
+`median_earnings_4yr_usd`, a renda mediana quatro anos após a conclusão, sem usar
+variáveis derivadas do alvo nem informações posteriores.
+
+Os relatórios ficam em `docs/projects/eda/index.md` e
+`docs/projects/regression/index.md`.
 
 ## Instalação e dados
 
@@ -15,9 +17,13 @@ python download_data.py
 python docs/projects/eda/code/analysis.py
 ```
 
-O download grava o arquivo bruto em `data/raw/college_majors_2026.csv`. Ele não
-é versionado por exceder 100 MB. A análise da EDA regenera suas tabelas e
-figuras a partir desse arquivo.
+O download grava o arquivo bruto em `data/raw/college_majors_2026.csv`, que não é
+versionado por exceder 100 MB. A análise da EDA regenera suas tabelas e figuras a
+partir desse arquivo.
+
+Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
+evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode
+substituí-la pela distribuição indicada para a versão de CUDA da máquina.
 
 ## Verificação da regressão
 
@@ -29,19 +35,46 @@ python -m docs.projects.regression.code.search --check
 python -m docs.projects.regression.code.final_config --check
 python -m docs.projects.regression.code.final_evaluation --check
 python -m docs.projects.regression.code.error_analysis --check
+python -m docs.projects.regression.code.target_control --check
 pytest -q
 ```
 
-Os comandos de desenvolvimento retreinam os modelos em CPU e podem levar
-alguns minutos. `final_evaluation --check` é deliberadamente offline: valida
-as métricas, previsões e hashes versionados sem reabrir o teste. A análise de
-erros usa esse CSV final e retreina somente em treino/validação.
+| Módulo | O que confere | Retreina? |
+|---|---|---|
+| `data` | Splits e manifesto, sem transformar o teste | Não |
+| `baselines` | Dummy e grade do Ridge, em treino e validação | Sim |
+| `train` | MLP de referência, em treino e validação | Sim |
+| `search` | As 12 configurações da busca, em treino e validação | Sim |
+| `final_config` | Correspondência entre a configuração congelada e a busca | Não |
+| `final_evaluation` | Métricas, previsões e hashes das seeds 42, 43 e 44, sem reabrir o teste | Não |
+| `error_analysis` | Erros das previsões finais; permutação e ablação na validação | Sim |
+| `target_control` | Ridge com alvo em `log1p`, em treino e validação | Sim |
 
-Para regenerar artefatos de desenvolvimento após uma mudança deliberada, use
-os comandos `--write-manifest`, `--write-results`, `--write-reference`,
-`--write-config` e `--write-analysis` nos respectivos módulos. Não execute
-novamente `final_evaluation --write-results`: a avaliação de teste foi única e
-o código bloqueia sobrescrita.
+Os módulos que retreinam podem levar alguns minutos em CPU.
+
+### Reprodução em outros ambientes
+
+`baselines`, `train`, `search` e `error_analysis` comparam valores exatos e podem
+falhar fora do ambiente que gerou os artefatos, assim como o teste de `pytest` que
+usa `baselines`. Em uma instalação limpa com Python 3.10 e as versões de
+`requirements.txt`, os baselines variaram até US$ 0,12 e os MAEs da busca, até cerca
+de US$ 36. A melhor época da rede de referência passou de 11 para 5, mas o vencedor
+da busca se manteve.
+
+Essa divergência não invalida os resultados de teste, que `final_evaluation --check`
+confere a partir dos artefatos. Não regenere os artefatos apenas para fazer as
+verificações passarem: o relatório e os resultados de teste dependem dos valores
+versionados.
+
+### Regenerar artefatos
+
+Após uma mudança deliberada, use `--write-manifest` (`data`), `--write-results`
+(`baselines`, `search` e `target_control`), `--write-reference` (`train`),
+`--write-config` (`final_config`) e `--write-analysis` (`error_analysis`).
+
+Não execute novamente `final_evaluation --write-results`: o teste já foi aberto duas
+vezes, primeiro com seed única e depois na correção multiseed, e o código bloqueia
+novas sobrescritas.
 
 ## Documentação
 
@@ -49,41 +82,3 @@ o código bloqueia sobrescrita.
 mkdocs build --strict
 mkdocs serve
 ```
-
-Os relatórios ficam em `docs/projects/eda/index.md` e
-`docs/projects/regression/index.md`.
-
-A fundação da etapa supervisionada fica em `docs/projects/regression/`. O
-comando de verificação acima reproduz os splits de desenvolvimento, confere o
-manifesto versionado e mantém o conjunto de teste bloqueado para a avaliação
-final.
-
-Os baselines de regressão são reproduzidos somente sobre treino e validação.
-Use `--write-results` no módulo `baselines` apenas quando quiser regenerar os
-artefatos versionados; `--check` recalcula e confere os resultados existentes.
-
-A MLP de referência também usa comandos separados: `--write-reference`
-regenera o histórico e a figura em CPU, enquanto `--check` retreina com a
-mesma semente e verifica a reprodução sem acessar o teste.
-
-A busca de hiperparâmetros compara 12 configurações fixas com
-`python -m docs.projects.regression.code.search --write-results`. O comando
-`--check` repete a busca em CPU e confere os resultados versionados; ambos
-usam somente treino e validação.
-
-A configuração escolhida fica congelada em `final_config.json`. O comando
-`python -m docs.projects.regression.code.final_config --check` confere sua
-correspondência com a busca sem retreinar a rede nem acessar o teste.
-
-A avaliação final usa as seeds 42, 43 e 44 e reporta média ± desvio amostral.
-Seus artefatos versionados permitem verificar os resultados sem acessar
-novamente o teste.
-
-A análise de erros usa somente as previsões finais já versionadas; importância
-por permutação e ablação rodam na validação. Use `--write-analysis` para
-regenerar seus artefatos e `--check` para reproduzir e conferir a análise sem
-reabrir o teste.
-
-Em Linux, o arquivo de dependências instala a distribuição CPU do PyTorch para
-evitar vários gigabytes de bibliotecas CUDA. Uma instalação com GPU pode
-substituí-la pela distribuição indicada para a versão de CUDA da máquina.

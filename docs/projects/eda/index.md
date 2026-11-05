@@ -4,7 +4,7 @@ task: regression
 dataset: https://www.kaggle.com/datasets/srisyra02/college-major-career-analytics-dataset
 team:
   - Maria Luiza Sevilha
-  - Vinicus Barreto Pomilio
+  - Vinicius Barreto Pomilio
 ai_use: "OpenAI Codex e Anthropic ClaudeCode foram usados no sketch do codigo, estrutura e na primeira versão do texto; a equipe revisou e é responsável por explicar as decisões."
 ---
 

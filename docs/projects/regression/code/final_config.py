@@ -177,6 +177,10 @@ def build_frozen_payload(
             "target_statistics_fit_split": "train",
             "test_locked": True,
             "test_transformed": False,
+            "state_scope": (
+                "Estado no congelamento, antes da avaliação final; "
+                "os acessos ao teste estão em final_test_results.json."
+            ),
         },
         "model": {
             "input_dim": model_config.input_dim,

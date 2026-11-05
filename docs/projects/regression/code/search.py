@@ -314,6 +314,10 @@ def _money(value: float) -> str:
     return "US$ " + formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _decimal(value: float, digits: int) -> str:
+    return f"{value:.{digits}f}".replace(".", ",")
+
+
 def render_table(payload: dict[str, Any]) -> str:
     lines = [
         "| Ordem | Configuração | Status | MAE | RMSE | R² | Parâmetros | Melhor época | Parada | Tempo (s) |",
@@ -325,7 +329,7 @@ def render_table(payload: dict[str, Any]) -> str:
             lines.append(
                 f"| {position} | `{result['experiment']['experiment_id']}` | "
                 f"falhou: {error['type']}: {error['message']} | — | — | — | — | — | — | "
-                f"{result['duration_seconds']:.3f} |"
+                f"{_decimal(result['duration_seconds'], 3)} |"
             )
             continue
         metrics = result["validation_metrics_usd"]
@@ -333,9 +337,9 @@ def render_table(payload: dict[str, Any]) -> str:
         lines.append(
             f"| {position} | `{result['experiment']['experiment_id']}` | ok | "
             f"{_money(metrics['mae_usd'])} | {_money(metrics['rmse_usd'])} | "
-            f"{metrics['r2']:.6f} | {parameters}"
+            f"{_decimal(metrics['r2'], 6)} | {parameters}"
             + f" | {result['best_epoch']} | {result['stopped_epoch']} | "
-            f"{result['duration_seconds']:.3f} |"
+            f"{_decimal(result['duration_seconds'], 3)} |"
         )
     return "\n".join(lines) + "\n"
 
@@ -356,13 +360,15 @@ def save_figure(payload: dict[str, Any], path: Path) -> None:
     axes[0].invert_yaxis()
     axes[0].set(xlabel="MAE de validação (US$)", title="Busca ordenada pela métrica principal")
     for position, value in zip(positions, maes):
-        axes[0].text(value + 8, position, f"{value:,.0f}", va="center", fontsize=8)
+        label = f"{value:,.0f}".replace(",", ".")
+        axes[0].text(value + 8, position, label, va="center", fontsize=8)
 
     representatives = {
         "reference": "Sem regularização",
         "weight_decay_1e-4": "Weight decay",
         "dropout_0.10": "Dropout",
         "layernorm": "LayerNorm",
+        "low_lr_regularized": "Vencedor (dropout, weight decay e lr 3e-4)",
     }
     by_id = {item["experiment"]["experiment_id"]: item for item in successful}
     for identifier, label in representatives.items():
@@ -377,7 +383,7 @@ def save_figure(payload: dict[str, Any], path: Path) -> None:
     axes[1].set(
         xlabel="Época",
         ylabel="MAE de validação (US$)",
-        title="Comparação direta das regularizações",
+        title="Regularizações e configuração vencedora",
     )
     axes[1].legend()
     fig.suptitle("Figura 2: Regularização e busca de hiperparâmetros", fontweight="bold")

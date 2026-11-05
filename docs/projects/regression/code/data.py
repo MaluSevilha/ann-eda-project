@@ -277,6 +277,10 @@ def build_manifest(path: Path = DATA_PATH) -> dict[str, Any]:
             "target_statistics_computed": False,
             "predictive_metrics_computed": False,
         },
+        "test_policy_scope": (
+            "Vale para o pipeline de desenvolvimento, que não transforma o teste; "
+            "os acessos da avaliação final estão em final_test_results.json."
+        ),
     }
 
 

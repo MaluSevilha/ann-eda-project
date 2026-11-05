@@ -102,6 +102,7 @@ def test_frozen_artifact_contains_no_test_results_or_identifiers():
     assert payload["selection"]["test_accessed"] is False
     assert payload["data_contract"]["test_locked"] is True
     assert payload["data_contract"]["test_transformed"] is False
+    assert "final_test_results.json" in payload["data_contract"]["state_scope"]
 
 
 def test_seed_cannot_be_silently_overridden(tmp_path):

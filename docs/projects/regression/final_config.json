@@ -22,7 +22,8 @@
     "preprocessor_fit_split": "train",
     "target_statistics_fit_split": "train",
     "test_locked": true,
-    "test_transformed": false
+    "test_transformed": false,
+    "state_scope": "Estado no congelamento, antes da avaliação final; os acessos ao teste estão em final_test_results.json."
   },
   "model": {
     "input_dim": 420,
