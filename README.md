@@ -75,8 +75,9 @@ A configuração escolhida fica congelada em `final_config.json`. O comando
 `python -m docs.projects.regression.code.final_config --check` confere sua
 correspondência com a busca sem retreinar a rede nem acessar o teste.
 
-A avaliação final foi executada uma única vez com a seed 42. Seus artefatos
-versionados permitem verificar os resultados sem acessar novamente o teste.
+A avaliação final usa as seeds 42, 43 e 44 e reporta média ± desvio amostral.
+Seus artefatos versionados permitem verificar os resultados sem acessar
+novamente o teste.
 
 A análise de erros usa somente as previsões finais já versionadas; importância
 por permutação e ablação rodam na validação. Use `--write-analysis` para

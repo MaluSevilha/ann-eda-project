@@ -1,7 +1,7 @@
-"""Avaliação final e única no teste com a configuração congelada.
+"""Avaliação final no teste com a configuração congelada e três seeds.
 
-``--write-results`` acessa o teste e não permite sobrescrita. ``--check`` é
-offline: valida somente os artefatos versionados.
+``--upgrade-multiseed`` migra os artefatos antigos de seed única. ``--check``
+é offline: valida somente os artefatos versionados.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import hashlib
 import json
 import os
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -49,7 +49,9 @@ RESIDUAL_FIGURE_PATH = REGRESSION_DIR / "figures" / "fig04_residuals_vs_predicte
 BASELINE_RESULTS_PATH = REGRESSION_DIR / "baseline_results.json"
 SPLIT_MANIFEST_PATH = REGRESSION_DIR / "split_manifest.json"
 
-FINAL_SEED = 42
+FINAL_SEEDS = (42, 43, 44)
+REFERENCE_SEED = 42
+HISTORICAL_TEST_ACCESS_COUNT = 2
 SUCCESS_FRACTION = 0.85
 CONTEXT_COLUMNS = ("program_id", GROUP_COLUMN, "credential_name", "institution_control")
 
@@ -60,7 +62,7 @@ class FinalEvaluationError(RuntimeError):
 
 @dataclass
 class FinalEvaluationResult:
-    mlp_training: TrainingResult
+    mlp_trainings: dict[int, TrainingResult]
     predictions: pd.DataFrame
     metrics: dict[str, dict[str, float]]
     test_identity: dict[str, Any]
@@ -153,44 +155,55 @@ def run_final_evaluation() -> FinalEvaluationResult:
 
     prepared = prepare_development_data(load_development_splits())
     frozen = load_frozen_config()
-    if frozen.training_config.seed != FINAL_SEED:
+    if frozen.training_config.seed != REFERENCE_SEED:
         raise FinalEvaluationError(
-            f"A configuração congelada deve usar exclusivamente a seed {FINAL_SEED}"
+            f"A configuração congelada deve usar a seed-base {REFERENCE_SEED}"
         )
-    mlp_training = train_model(
-        prepared,
-        frozen.model_config,
-        frozen.training_config,
-    )
+    mlp_trainings = {
+        seed: train_model(
+            prepared,
+            frozen.model_config,
+            replace(frozen.training_config, seed=seed),
+        )
+        for seed in FINAL_SEEDS
+    }
     dummy, ridge = _fit_baselines(prepared)
 
     test = _sort_test(_load_locked_test_for_final_evaluation())
     X_test = _transform_test(prepared, test)
     y_test = test[TARGET].to_numpy(dtype=np.float64)
-    mlp_prediction = predict_usd(
-        mlp_training.model,
-        X_test,
-        mlp_training.target_transformer,
-        device=frozen.training_config.device,
-        batch_size=frozen.training_config.validation_batch_size,
-    )
+    mlp_predictions = {
+        seed: predict_usd(
+            training.model,
+            X_test,
+            training.target_transformer,
+            device=frozen.training_config.device,
+            batch_size=frozen.training_config.validation_batch_size,
+        )
+        for seed, training in mlp_trainings.items()
+    }
     dummy_prediction = dummy.predict(X_test).astype(np.float64)
     ridge_prediction = ridge.predict(X_test).astype(np.float64)
 
     predictions = test.loc[:, CONTEXT_COLUMNS].copy()
     predictions["actual_usd"] = y_test
-    predictions["mlp_seed_42_usd"] = mlp_prediction
+    for seed, prediction in mlp_predictions.items():
+        predictions[f"mlp_seed_{seed}_usd"] = prediction
     predictions["ridge_usd"] = ridge_prediction
     predictions["dummy_usd"] = dummy_prediction
-    predictions["mlp_residual_usd"] = y_test - mlp_prediction
-    predictions["mlp_absolute_error_usd"] = np.abs(y_test - mlp_prediction)
+    reference_prediction = mlp_predictions[REFERENCE_SEED]
+    predictions["mlp_residual_usd"] = y_test - reference_prediction
+    predictions["mlp_absolute_error_usd"] = np.abs(y_test - reference_prediction)
     metrics = {
-        "mlp_seed_42": regression_metrics(y_test, mlp_prediction),
+        **{
+            f"mlp_seed_{seed}": regression_metrics(y_test, prediction)
+            for seed, prediction in mlp_predictions.items()
+        },
         "ridge": regression_metrics(y_test, ridge_prediction),
         "dummy": regression_metrics(y_test, dummy_prediction),
     }
     return FinalEvaluationResult(
-        mlp_training=mlp_training,
+        mlp_trainings=mlp_trainings,
         predictions=predictions,
         metrics=metrics,
         test_identity={
@@ -212,26 +225,41 @@ def _rounded_metrics(metrics: dict[str, float]) -> dict[str, float]:
 def _build_core_payload(
     metrics: dict[str, dict[str, float]],
     test_identity: dict[str, Any],
-    best_epoch: int,
-    stopped_epoch: int,
+    epochs: dict[int, tuple[int, int]],
 ) -> dict[str, Any]:
     rounded = {name: _rounded_metrics(value) for name, value in metrics.items()}
     baseline_name = min(
         ("ridge", "dummy"), key=lambda name: rounded[name]["mae_usd"]
     )
     baseline_mae = rounded[baseline_name]["mae_usd"]
-    mlp_mae = rounded["mlp_seed_42"]["mae_usd"]
+    aggregate: dict[str, dict[str, float | int]] = {}
+    for metric, digits in (("mae_usd", 2), ("rmse_usd", 2), ("r2", 6)):
+        values = np.asarray(
+            [metrics[f"mlp_seed_{seed}"][metric] for seed in FINAL_SEEDS],
+            dtype=np.float64,
+        )
+        aggregate[metric] = {
+            "mean": round(float(values.mean()), digits),
+            "std": round(float(values.std(ddof=1)), digits),
+            "ddof": 1,
+        }
+    mlp_mae = float(aggregate["mae_usd"]["mean"])
+    mlp_mae_std = float(aggregate["mae_usd"]["std"])
     threshold = round(SUCCESS_FRACTION * baseline_mae, 2)
     improvement = round(100.0 * (baseline_mae - mlp_mae) / baseline_mae, 2)
+    gap = round(baseline_mae - mlp_mae, 2)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "evaluation_split": "test",
         "test_accessed": True,
-        "test_access_count": 1,
+        "test_access_count": HISTORICAL_TEST_ACCESS_COUNT,
         "selection_completed_before_test": True,
         "protocol": {
-            "seed": FINAL_SEED,
-            "multiple_seeds": False,
+            "seeds": list(FINAL_SEEDS),
+            "reference_seed": REFERENCE_SEED,
+            "multiple_seeds": True,
+            "aggregation": "sample_mean_and_sample_std_ddof_1",
+            "current_run_test_load_count": 1,
             "training_split": "train",
             "early_stopping_split": "validation",
             "frozen_config": "final_config.json",
@@ -239,11 +267,19 @@ def _build_core_payload(
         },
         "test_identity": test_identity,
         "models": {
-            "mlp_seed_42": {
+            **{
+                f"mlp_seed_{seed}": {
+                    "configuration": "low_lr_regularized",
+                    "best_epoch": epochs[seed][0],
+                    "stopped_epoch": epochs[seed][1],
+                    **rounded[f"mlp_seed_{seed}"],
+                }
+                for seed in FINAL_SEEDS
+            },
+            "mlp_aggregate": {
                 "configuration": "low_lr_regularized",
-                "best_epoch": best_epoch,
-                "stopped_epoch": stopped_epoch,
-                **rounded["mlp_seed_42"],
+                "seed_count": len(FINAL_SEEDS),
+                **aggregate,
             },
             "ridge": {"configuration": "alpha=1", **rounded["ridge"]},
             "dummy": {"configuration": "strategy=mean", **rounded["dummy"]},
@@ -254,12 +290,15 @@ def _build_core_payload(
             "best_baseline_mae_usd": baseline_mae,
             "maximum_mlp_mae_usd": threshold,
             "mlp_mae_usd": mlp_mae,
+            "mlp_mae_std_usd": mlp_mae_std,
             "observed_improvement_pct": improvement,
             "met": mlp_mae <= threshold,
+            "gap_to_baseline_usd": gap,
+            "gap_exceeds_seed_std": gap > mlp_mae_std,
         },
         "limitations": {
-            "single_seed_only": True,
-            "seed_variability_estimated": False,
+            "test_reopened_for_multiseed_correction": True,
+            "configuration_changed_after_first_test_access": False,
         },
     }
 
@@ -268,8 +307,10 @@ def _core_payload(result: FinalEvaluationResult) -> dict[str, Any]:
     return _build_core_payload(
         result.metrics,
         result.test_identity,
-        result.mlp_training.best_epoch,
-        result.mlp_training.stopped_epoch,
+        {
+            seed: (training.best_epoch, training.stopped_epoch)
+            for seed, training in result.mlp_trainings.items()
+        },
     )
 
 
@@ -285,10 +326,22 @@ def render_table(payload: dict[str, Any]) -> str:
     ]
     labels = {
         "mlp_seed_42": "MLP (seed 42)",
+        "mlp_seed_43": "MLP (seed 43)",
+        "mlp_seed_44": "MLP (seed 44)",
         "ridge": "Ridge",
         "dummy": "DummyRegressor",
     }
-    for key in ("mlp_seed_42", "ridge", "dummy"):
+    aggregate = payload["models"]["mlp_aggregate"]
+    lines.append(
+        "| MLP (média ± desvio) | `low_lr_regularized`; 3 seeds | "
+        f"{_format_number(aggregate['mae_usd']['mean'], 2)} ± "
+        f"{_format_number(aggregate['mae_usd']['std'], 2)} | "
+        f"{_format_number(aggregate['rmse_usd']['mean'], 2)} ± "
+        f"{_format_number(aggregate['rmse_usd']['std'], 2)} | "
+        f"{_format_number(aggregate['r2']['mean'], 6)} ± "
+        f"{_format_number(aggregate['r2']['std'], 6)} |"
+    )
+    for key in ("mlp_seed_42", "mlp_seed_43", "mlp_seed_44", "ridge", "dummy"):
         model = payload["models"][key]
         lines.append(
             f"| {labels[key]} | `{model['configuration']}` | "
@@ -363,6 +416,28 @@ def ensure_outputs_absent() -> None:
         )
 
 
+def ensure_single_seed_upgrade_source() -> None:
+    """Aceita somente a migração auditável dos artefatos antigos conhecidos."""
+
+    payload = _read_json(RESULTS_PATH, "Resultado final anterior")
+    if (
+        payload.get("schema_version") != 1
+        or payload.get("protocol", {}).get("seed") != REFERENCE_SEED
+        or payload.get("test_access_count") != 1
+        or payload.get("limitations", {}).get("single_seed_only") is not True
+    ):
+        raise FinalEvaluationError("A origem não é a avaliação antiga de seed única")
+    path_map = {
+        "predictions": PREDICTIONS_PATH,
+        "table": TABLE_PATH,
+        "predicted_vs_actual_figure": PREDICTED_FIGURE_PATH,
+        "residual_figure": RESIDUAL_FIGURE_PATH,
+    }
+    for name, path in path_map.items():
+        if payload.get("artifacts", {}).get(name, {}).get("sha256") != _sha256_file(path):
+            raise FinalEvaluationError(f"Artefato anterior divergente: {name}")
+
+
 def write_outputs(result: FinalEvaluationResult) -> None:
     core = _core_payload(result)
     PREDICTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -403,14 +478,25 @@ def run_and_write_final_evaluation() -> FinalEvaluationResult:
     return result
 
 
+def upgrade_and_write_multiseed_evaluation() -> FinalEvaluationResult:
+    ensure_single_seed_upgrade_source()
+    result = run_final_evaluation()
+    write_outputs(result)
+    return result
+
+
 def _metrics_from_predictions(
     predictions: pd.DataFrame,
 ) -> dict[str, dict[str, float]]:
     actual = predictions["actual_usd"].to_numpy(dtype=np.float64)
     return {
-        "mlp_seed_42": regression_metrics(
-            actual, predictions["mlp_seed_42_usd"].to_numpy(dtype=np.float64)
-        ),
+        **{
+            f"mlp_seed_{seed}": regression_metrics(
+                actual,
+                predictions[f"mlp_seed_{seed}_usd"].to_numpy(dtype=np.float64),
+            )
+            for seed in FINAL_SEEDS
+        },
         "ridge": regression_metrics(
             actual, predictions["ridge_usd"].to_numpy(dtype=np.float64)
         ),
@@ -425,7 +511,7 @@ def check_outputs() -> dict[str, Any]:
 
     payload = _read_json(RESULTS_PATH, "Resultado final")
     frozen = load_frozen_config()
-    if frozen.training_config.seed != FINAL_SEED:
+    if frozen.training_config.seed != REFERENCE_SEED:
         raise FinalEvaluationError("Seed congelada divergente")
     required = _artifact_paths()[1:]
     missing = [
@@ -439,7 +525,7 @@ def check_outputs() -> dict[str, Any]:
     expected_columns = {
         *CONTEXT_COLUMNS,
         "actual_usd",
-        "mlp_seed_42_usd",
+        *(f"mlp_seed_{seed}_usd" for seed in FINAL_SEEDS),
         "ridge_usd",
         "dummy_usd",
         "mlp_residual_usd",
@@ -479,8 +565,13 @@ def check_outputs() -> dict[str, Any]:
     expected_core = _build_core_payload(
         observed_metrics,
         observed_identity,
-        payload["models"]["mlp_seed_42"]["best_epoch"],
-        payload["models"]["mlp_seed_42"]["stopped_epoch"],
+        {
+            seed: (
+                payload["models"][f"mlp_seed_{seed}"]["best_epoch"],
+                payload["models"][f"mlp_seed_{seed}"]["stopped_epoch"],
+            )
+            for seed in FINAL_SEEDS
+        },
     )
     observed_core = dict(payload)
     artifacts = observed_core.pop("artifacts", None)
@@ -506,6 +597,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--write-results", action="store_true")
+    action.add_argument("--upgrade-multiseed", action="store_true")
     action.add_argument("--check", action="store_true")
     return parser.parse_args()
 
@@ -518,6 +610,14 @@ def main() -> None:
         print(
             f"Avaliação final gravada: MLP seed 42, "
             f"MAE=US$ {metrics['mae_usd']:,.2f}"
+        )
+        return
+    if args.upgrade_multiseed:
+        result = upgrade_and_write_multiseed_evaluation()
+        values = [result.metrics[f"mlp_seed_{seed}"]["mae_usd"] for seed in FINAL_SEEDS]
+        print(
+            "Avaliação multiseed gravada: "
+            f"MAE=US$ {np.mean(values):,.2f} ± {np.std(values, ddof=1):,.2f}"
         )
         return
     payload = check_outputs()

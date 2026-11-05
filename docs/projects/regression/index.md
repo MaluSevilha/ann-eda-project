@@ -180,30 +180,40 @@ fixar a duração em 31 épocas.
 O arquivo é derivado da primeira linha da busca e validado contra ela; uma
 mudança no vencedor, nas métricas ou no protocolo faz a verificação falhar.
 Ele registra explicitamente `test_accessed: false`, e o script de busca rejeita
-objetos que exponham campos de teste. As sementes adicionais exigidas para a
-avaliação final serão declaradas no protocolo da próxima etapa, antes de
-liberar o conjunto bloqueado.
+objetos que exponham campos de teste. Para a avaliação final, a mesma
+configuração foi repetida com as seeds 42, 43 e 44, sem nova seleção de
+hiperparâmetros.
 
 ## 5. Avaliação no teste
 
-A configuração foi escolhida e congelada antes desta etapa. A MLP, o Ridge e
-o Dummy foram ajustados nas mesmas 36.565 linhas de treino; somente a MLP usou
-a validação para early stopping. Depois disso, o conjunto bloqueado de 11.740
-programas foi transformado e avaliado uma única vez. O recibo versionado
-registra `test_access_count: 1`.
+A configuração foi escolhida e congelada antes desta etapa. As três MLPs, o
+Ridge e o Dummy foram ajustados nas mesmas 36.565 linhas de treino; somente as
+MLPs usaram a validação para early stopping. As redes foram treinadas com
+seeds **42, 43 e 44** antes de carregar e transformar os mesmos 11.740
+programas de teste.
+
+Uma primeira avaliação apenas com a seed 42 havia sido produzida por engano.
+Para atender à rubrica, o teste precisou ser reaberto uma segunda vez, sem
+alterar configuração, pipeline ou critério após o primeiro resultado. O
+artefato registra esse histórico como `test_access_count: 2` e registra que a
+execução multiseed carregou o teste uma única vez.
 
 --8<-- "docs/projects/regression/tables/final_test_metrics.md"
 
-A MLP seed 42 restaurou a época **31**, parou na época **46** e alcançou no
-teste **MAE US$ 6.590,14**, **RMSE US$ 11.215,08** e **R² 0,845054**. O melhor
-baseline continuou sendo o Ridge, com MAE **US$ 8.035,06**. Assim, o limite de
-15% no teste era **US$ 6.829,80**: a MLP ficou US$ **239,66** abaixo dele e
-reduziu o MAE do Ridge em **17,98%**. Portanto, o critério definido na etapa 0
-foi atingido para esta execução.
+As seeds 42, 43 e 44 pararam, respectivamente, nas épocas **46, 42 e 51**, com
+melhores pesos nas épocas **31, 27 e 36**. O resultado agregado foi **MAE US$
+6.573,47 ± US$ 18,90**, **RMSE US$ 11.152,28 ± US$ 86,80** e **R² 0,846778 ±
+0,002380**, usando desvio amostral. O melhor baseline continuou sendo o Ridge,
+com MAE **US$ 8.035,06**. O limite de 15% era **US$ 6.829,80**; o MAE médio da
+MLP ficou US$ **256,33** abaixo dele e reduziu o erro do Ridge em **18,19%**.
+A diferença de **US$ 1.461,59** para o Ridge é muito maior que o desvio de US$
+18,90 entre seeds, portanto o critério foi atingido de forma estável nas três
+inicializações avaliadas.
 
 ![Previsões da MLP comparadas aos valores reais no teste](figures/fig03_predicted_vs_actual.png)
 
-O gráfico previsto × real concentra a maior parte dos programas ao redor da
+Os gráficos usam a seed 42, fixada previamente como referência para a análise
+por programa. O gráfico previsto × real concentra a maior parte dos programas ao redor da
 diagonal, mas mostra compressão nas rendas mais altas: vários valores reais na
 cauda recebem previsões menores. Isso é compatível com regressão em direção à
 média e ajuda a explicar por que o RMSE permanece substancialmente maior que o
@@ -216,15 +226,14 @@ positivos grandes — subestimações — entre os programas de maior renda, emb
 também existam superestimações relevantes. Esse padrão de heterocedasticidade
 motiva a análise por faixa do alvo e por categoria na etapa seguinte.
 
-Por decisão de escopo, foi usada **somente a seed 42**. Logo, estes resultados
-não estimam a variação entre inicializações e não atendem ao item da rubrica
-que solicita três ou mais seeds com média ± desvio. O ganho de 17,98% não pode
-ser descrito como estável entre seeds com a evidência disponível.
+As três seeds atendem ao mínimo da rubrica e permitem uma estimativa inicial
+da variação entre inicializações. Ainda assim, três execuções são uma amostra
+pequena e não substituem uma análise mais ampla de estabilidade.
 
 ## 6. Análise de erros
 
-Esta etapa não reabre o teste: os erros abaixo são calculados a partir das
-previsões finais já congeladas. Para evitar faixas escolhidas depois de ver os
+Esta etapa não reabre o teste: os erros abaixo usam a **seed 42 como referência
+fixa** e são calculados a partir das previsões finais já congeladas. Para evitar faixas escolhidas depois de ver os
 resultados, usamos os quartis do alvo no treino registrados na EDA: US$
 46.709, US$ 58.878 e US$ 77.121. Grupos com menos de 100 programas são
 marcados e não sustentam conclusões fortes isoladamente.
@@ -311,9 +320,9 @@ ser interpretada como efeito causal.
 
 ## 7. Conclusão
 
-Dentro desta tarefa, **a MLP valeu a pena em precisão preditiva**. Seu MAE de
-teste foi **US$ 6.590,14**, contra **US$ 8.035,06** do Ridge: redução de
-**17,98%**, superior ao critério de 15% registrado antes do treinamento. O
+Dentro desta tarefa, **a MLP valeu a pena em precisão preditiva**. Seu MAE
+médio de teste foi **US$ 6.573,47 ± US$ 18,90**, contra **US$ 8.035,06** do
+Ridge: redução de **18,19%**, superior ao critério de 15% registrado antes do treinamento. O
 ganho veio de relações não lineares entre renda anterior, curso, credencial,
 instituição e ocupação que o baseline linear não capturou por completo.
 
@@ -328,8 +337,11 @@ de revisão humana e de monitoramento dos erros por subgrupo.
 
 As limitações mais importantes são:
 
-- somente a seed 42 foi avaliada, então não medimos variação entre
-  inicializações e não atendemos ao requisito de média ± desvio;
+- somente três seeds foram avaliadas, o mínimo da rubrica, então a estimativa
+  de variabilidade ainda tem baixa precisão;
+- a correção multiseed exigiu reabrir o teste após a primeira avaliação de
+  seed única; nenhum hiperparâmetro foi alterado depois desse primeiro acesso,
+  mas o protocolo ideal de acesso único não foi cumprido historicamente;
 - **74,51%** dos alvos da base original estavam suprimidos, principalmente por
   regras de privacidade ligadas ao tamanho da coorte; o domínio aprendido
   representa programas com renda divulgada e pode não generalizar para
@@ -342,8 +354,8 @@ As limitações mais importantes são:
   trabalho; além disso, importância e correlação são associações, não efeitos
   causais.
 
-Com mais tempo, executaríamos pelo menos três seeds, adicionaríamos intervalos
-por regressão quantílica ou ensembles, trataríamos explicitamente a cauda,
+Com mais tempo, executaríamos mais seeds, adicionaríamos intervalos por
+regressão quantílica ou ensembles, trataríamos explicitamente a cauda,
 compararíamos uma versão operacional sem renda de primeiro ano e faríamos
 validação temporal externa. Antes de qualquer uso real, também seriam
 necessárias auditorias periódicas de calibração e erro por credencial,
@@ -357,7 +369,7 @@ controle institucional e faixa de renda.
 | 2 | Treino · validação · teste (linhas) | 36.565 · 9.758 · 11.740 |
 | 3 | Melhor baseline e sua métrica no teste | Ridge `alpha=1`; MAE US$ 8.035,06 |
 | 4 | Rede escolhida: camadas × unidades, parâmetros e regularização | 420→128→64→1; 62.209 parâmetros; dropout 0,10 e weight decay `1e-5` |
-| 5 | Otimizador, learning rate, batch e época de parada | Adam; `3e-4`; batch 256; parada 46, melhores pesos da época 31 |
-| 6 | Métrica principal da rede no teste | MAE US$ 6.590,14 com seed 42; média ± desvio indisponível |
-| 7 | Critério de sucesso atingido? | Sim; MAE 17,98% menor que o Ridge, acima dos 15% exigidos |
+| 5 | Otimizador, learning rate, batch e época de parada | Adam; `3e-4`; batch 256; paradas 46 · 42 · 51 nas seeds 42 · 43 · 44 |
+| 6 | Métrica principal da rede no teste | MAE US$ 6.573,47 ± US$ 18,90, média ± desvio amostral de 3 seeds |
+| 7 | Critério de sucesso atingido? | Sim; MAE médio 18,19% menor que o Ridge, acima dos 15% exigidos |
 | 8 | Subgrupo com maior erro | Programas sem credencial; MAE US$ 16.521,33; `n=45`, grupo pequeno |

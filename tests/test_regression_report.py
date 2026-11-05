@@ -47,7 +47,8 @@ def test_summary_has_exactly_eight_rows_and_matches_artifacts():
     ]
     assert " · ".join(f"{value:,}".replace(",", ".") for value in split_rows) in summary
 
-    mlp = final["models"]["mlp_seed_42"]
+    mlp_models = [final["models"][f"mlp_seed_{seed}"] for seed in (42, 43, 44)]
+    aggregate = final["models"]["mlp_aggregate"]
     ridge = final["models"]["ridge"]
     criterion = final["success_criterion"]
     model = config["model"]
@@ -58,24 +59,29 @@ def test_summary_has_exactly_eight_rows_and_matches_artifacts():
     assert "→".join(map(str, [model["input_dim"], *model["hidden_dims"], 1])) in summary
     assert f"{model['parameter_count']:,}".replace(",", ".") in summary
     assert f"batch {training['batch_size']}" in summary
-    assert f"parada {mlp['stopped_epoch']}" in summary
-    assert f"época {mlp['best_epoch']}" in summary
-    assert f"MAE US$ {_usd(mlp['mae_usd'])}" in summary
-    assert f"seed {training['seed']}" in summary
+    for model in mlp_models:
+        assert str(model["stopped_epoch"]) in summary
+    assert f"MAE US$ {_usd(aggregate['mae_usd']['mean'])}" in summary
+    assert f"US$ {_usd(aggregate['mae_usd']['std'])}" in summary
+    assert "3 seeds" in summary
     assert f"{_usd(criterion['observed_improvement_pct'])}%" in summary
     assert f"MAE US$ {_usd(worst_group['mae_usd'])}" in summary
     assert f"`n={worst_group['count']}`" in summary
 
 
-def test_single_seed_limitation_is_explicit():
+def test_multiseed_result_and_access_history_are_explicit():
     report = _report_text().casefold()
     final = _artifact("final_test_results.json")
+    assert final["protocol"]["seeds"] == [42, 43, 44]
+    assert final["protocol"]["multiple_seeds"] is True
+    assert final["models"]["mlp_aggregate"]["seed_count"] == 3
     assert final["limitations"] == {
-        "single_seed_only": True,
-        "seed_variability_estimated": False,
+        "test_reopened_for_multiseed_correction": True,
+        "configuration_changed_after_first_test_access": False,
     }
-    assert "somente a seed 42" in report
-    assert "não atendemos ao requisito de média ± desvio" in report
+    assert "seeds 42, 43 e 44" in report
+    assert "média ± desvio" in report
+    assert "teste precisou ser reaberto uma segunda vez" in report
 
 
 def test_all_referenced_figures_and_snippets_exist():

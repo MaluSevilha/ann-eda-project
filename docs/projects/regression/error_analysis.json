@@ -2,9 +2,10 @@
   "schema_version": 1,
   "test_source": {
     "artifact": "final_test_predictions.csv",
-    "sha256": "7dc31cbb768cdaa55100a5d9ed4b901cb852a6e4b4694fb18fdd04aa6f7cf641",
+    "sha256": "69396e96dff9cf3dc00dc038a76f0aa8460d6c2ba9254d618c4fbf84179b3782",
     "rows": 11740,
-    "raw_test_reopened": false
+    "raw_test_reopened": false,
+    "reference_prediction": "mlp_seed_42_usd"
   },
   "group_policy": {
     "small_group_threshold": 100

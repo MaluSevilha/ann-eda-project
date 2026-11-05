@@ -12,6 +12,7 @@ from docs.projects.eda.code.pipeline import GROUP_COLUMN, MODEL_FEATURES, TARGET
 from docs.projects.regression.code import data as regression_data
 from docs.projects.regression.code import final_evaluation as evaluation
 from docs.projects.regression.code.baselines import regression_metrics
+from docs.projects.regression.code.train import TrainingConfig
 
 
 def _test_frame(rows=3):
@@ -52,20 +53,28 @@ def test_private_test_loader_checks_manifest_identity(tmp_path, monkeypatch):
         )
 
 
-def test_success_criterion_uses_seed_42_against_best_test_baseline():
+def test_success_criterion_uses_multiseed_mean_against_best_test_baseline():
     metrics = {
         "mlp_seed_42": {"mae_usd": 80.0, "rmse_usd": 100.0, "r2": 0.8},
+        "mlp_seed_43": {"mae_usd": 82.0, "rmse_usd": 102.0, "r2": 0.78},
+        "mlp_seed_44": {"mae_usd": 78.0, "rmse_usd": 98.0, "r2": 0.82},
         "ridge": {"mae_usd": 100.0, "rmse_usd": 120.0, "r2": 0.7},
         "dummy": {"mae_usd": 200.0, "rmse_usd": 220.0, "r2": 0.0},
     }
-    payload = evaluation._build_core_payload(metrics, {"rows": 3}, 4, 8)
-    assert payload["protocol"]["seed"] == 42
-    assert payload["protocol"]["multiple_seeds"] is False
+    epochs = {42: (4, 8), 43: (5, 9), 44: (6, 10)}
+    payload = evaluation._build_core_payload(metrics, {"rows": 3}, epochs)
+    assert payload["protocol"]["seeds"] == [42, 43, 44]
+    assert payload["protocol"]["multiple_seeds"] is True
+    assert payload["models"]["mlp_aggregate"]["mae_usd"] == {
+        "mean": 80.0,
+        "std": 2.0,
+        "ddof": 1,
+    }
     assert payload["success_criterion"]["best_baseline"] == "ridge"
     assert payload["success_criterion"]["maximum_mlp_mae_usd"] == 85.0
     assert payload["success_criterion"]["observed_improvement_pct"] == 20.0
     assert payload["success_criterion"]["met"] is True
-    assert payload["limitations"]["seed_variability_estimated"] is False
+    assert payload["success_criterion"]["gap_exceeds_seed_std"] is True
 
 
 def test_baselines_fit_the_exact_same_training_matrices(monkeypatch):
@@ -112,11 +121,7 @@ def test_final_evaluation_trains_before_loading_test_and_transforms_once(monkeyp
     )
     frozen = SimpleNamespace(
         model_config=object(),
-        training_config=SimpleNamespace(
-            seed=42,
-            device="cpu",
-            validation_batch_size=10,
-        ),
+        training_config=TrainingConfig(seed=42, validation_batch_size=10),
     )
     training = SimpleNamespace(
         model=object(),
@@ -136,8 +141,11 @@ def test_final_evaluation_trains_before_loading_test_and_transforms_once(monkeyp
     monkeypatch.setattr(evaluation, "prepare_development_data", lambda _splits: prepared)
     monkeypatch.setattr(evaluation, "load_frozen_config", lambda: frozen)
 
-    def fake_train(*_args):
-        events.append("train_mlp")
+    observed_seeds = []
+
+    def fake_train(_prepared, _model_config, training_config):
+        events.append(f"train_mlp_{training_config.seed}")
+        observed_seeds.append(training_config.seed)
         return training
 
     def fake_baselines(_prepared):
@@ -157,8 +165,16 @@ def test_final_evaluation_trains_before_loading_test_and_transforms_once(monkeyp
         lambda *_args, **_kwargs: np.asarray([9_000, 21_000, 29_000], dtype=np.float64),
     )
     result = evaluation.run_final_evaluation()
-    assert events == ["train_mlp", "fit_baselines", "load_test", "transform_test"]
-    assert result.mlp_training is training
+    assert events == [
+        "train_mlp_42",
+        "train_mlp_43",
+        "train_mlp_44",
+        "fit_baselines",
+        "load_test",
+        "transform_test",
+    ]
+    assert observed_seeds == [42, 43, 44]
+    assert result.mlp_trainings == {42: training, 43: training, 44: training}
     assert len(result.predictions) == 3
     assert result.metrics["mlp_seed_42"]["mae_usd"] == pytest.approx(1_000.0)
 
@@ -186,6 +202,8 @@ def _synthetic_result():
             "institution_control": ["Public"] * 3,
             "actual_usd": [10_000.0, 20_000.0, 30_000.0],
             "mlp_seed_42_usd": [9_000.0, 21_000.0, 29_000.0],
+            "mlp_seed_43_usd": [9_500.0, 20_500.0, 29_500.0],
+            "mlp_seed_44_usd": [8_500.0, 21_500.0, 28_500.0],
             "ridge_usd": [8_000.0, 22_000.0, 28_000.0],
             "dummy_usd": [20_000.0, 20_000.0, 20_000.0],
         }
@@ -195,14 +213,21 @@ def _synthetic_result():
     )
     predictions["mlp_absolute_error_usd"] = predictions["mlp_residual_usd"].abs()
     metrics = {
-        "mlp_seed_42": regression_metrics(
-            predictions["actual_usd"], predictions["mlp_seed_42_usd"]
-        ),
+        **{
+            f"mlp_seed_{seed}": regression_metrics(
+                predictions["actual_usd"], predictions[f"mlp_seed_{seed}_usd"]
+            )
+            for seed in (42, 43, 44)
+        },
         "ridge": regression_metrics(predictions["actual_usd"], predictions["ridge_usd"]),
         "dummy": regression_metrics(predictions["actual_usd"], predictions["dummy_usd"]),
     }
     return evaluation.FinalEvaluationResult(
-        mlp_training=SimpleNamespace(best_epoch=4, stopped_epoch=8),
+        mlp_trainings={
+            42: SimpleNamespace(best_epoch=4, stopped_epoch=8),
+            43: SimpleNamespace(best_epoch=5, stopped_epoch=9),
+            44: SimpleNamespace(best_epoch=6, stopped_epoch=10),
+        },
         predictions=predictions,
         metrics=metrics,
         test_identity={
@@ -231,7 +256,7 @@ def test_write_and_offline_check_validate_all_artifacts(tmp_path, monkeypatch):
     )
     evaluation.write_outputs(result)
     payload = evaluation.check_outputs()
-    assert payload["test_access_count"] == 1
+    assert payload["test_access_count"] == 2
     assert payload["models"]["mlp_seed_42"]["best_epoch"] == 4
     assert all(path.exists() and path.stat().st_size > 0 for path in paths.values())
 
@@ -256,11 +281,11 @@ def test_second_write_is_refused_before_evaluation(tmp_path, monkeypatch):
 
 def test_versioned_final_outputs_pass_offline_contract():
     payload = evaluation.check_outputs()
-    assert payload["protocol"]["seed"] == 42
-    assert payload["protocol"]["multiple_seeds"] is False
-    assert payload["test_access_count"] == 1
+    assert payload["protocol"]["seeds"] == [42, 43, 44]
+    assert payload["protocol"]["multiple_seeds"] is True
+    assert payload["test_access_count"] == 2
     assert payload["success_criterion"]["met"] is True
     assert payload["limitations"] == {
-        "single_seed_only": True,
-        "seed_variability_estimated": False,
+        "test_reopened_for_multiseed_correction": True,
+        "configuration_changed_after_first_test_access": False,
     }

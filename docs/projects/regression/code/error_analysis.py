@@ -155,7 +155,9 @@ def load_final_predictions() -> tuple[pd.DataFrame, str]:
     final_results = _read_json(FINAL_RESULTS_PATH, "Resultado final")
     if (
         final_results.get("test_accessed") is not True
-        or final_results.get("test_access_count") != 1
+        or not isinstance(final_results.get("test_access_count"), int)
+        or final_results["test_access_count"] < 1
+        or final_results.get("selection_completed_before_test") is not True
     ):
         raise ErrorAnalysisContractError("Recibo da avaliação final inválido")
     expected_hash = (
@@ -429,6 +431,7 @@ def study_payload(study: ErrorAnalysisStudy) -> dict[str, Any]:
             "sha256": study.source_sha256,
             "rows": study.source_rows,
             "raw_test_reopened": False,
+            "reference_prediction": "mlp_seed_42_usd",
         },
         "group_policy": {"small_group_threshold": SMALL_GROUP_THRESHOLD},
         "target_band_policy": {

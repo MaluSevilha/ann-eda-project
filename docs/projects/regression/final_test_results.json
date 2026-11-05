@@ -1,12 +1,19 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "evaluation_split": "test",
   "test_accessed": true,
-  "test_access_count": 1,
+  "test_access_count": 2,
   "selection_completed_before_test": true,
   "protocol": {
-    "seed": 42,
-    "multiple_seeds": false,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "reference_seed": 42,
+    "multiple_seeds": true,
+    "aggregation": "sample_mean_and_sample_std_ddof_1",
+    "current_run_test_load_count": 1,
     "training_split": "train",
     "early_stopping_split": "validation",
     "frozen_config": "final_config.json",
@@ -26,6 +33,41 @@
       "rmse_usd": 11215.08,
       "r2": 0.845054
     },
+    "mlp_seed_43": {
+      "configuration": "low_lr_regularized",
+      "best_epoch": 27,
+      "stopped_epoch": 42,
+      "mae_usd": 6552.94,
+      "rmse_usd": 11188.54,
+      "r2": 0.845786
+    },
+    "mlp_seed_44": {
+      "configuration": "low_lr_regularized",
+      "best_epoch": 36,
+      "stopped_epoch": 51,
+      "mae_usd": 6577.33,
+      "rmse_usd": 11053.23,
+      "r2": 0.849494
+    },
+    "mlp_aggregate": {
+      "configuration": "low_lr_regularized",
+      "seed_count": 3,
+      "mae_usd": {
+        "mean": 6573.47,
+        "std": 18.9,
+        "ddof": 1
+      },
+      "rmse_usd": {
+        "mean": 11152.28,
+        "std": 86.8,
+        "ddof": 1
+      },
+      "r2": {
+        "mean": 0.846778,
+        "std": 0.00238,
+        "ddof": 1
+      }
+    },
     "ridge": {
       "configuration": "alpha=1",
       "mae_usd": 8035.06,
@@ -44,22 +86,25 @@
     "best_baseline": "ridge",
     "best_baseline_mae_usd": 8035.06,
     "maximum_mlp_mae_usd": 6829.8,
-    "mlp_mae_usd": 6590.14,
-    "observed_improvement_pct": 17.98,
-    "met": true
+    "mlp_mae_usd": 6573.47,
+    "mlp_mae_std_usd": 18.9,
+    "observed_improvement_pct": 18.19,
+    "met": true,
+    "gap_to_baseline_usd": 1461.59,
+    "gap_exceeds_seed_std": true
   },
   "limitations": {
-    "single_seed_only": true,
-    "seed_variability_estimated": false
+    "test_reopened_for_multiseed_correction": true,
+    "configuration_changed_after_first_test_access": false
   },
   "artifacts": {
     "predictions": {
       "path": "final_test_predictions.csv",
-      "sha256": "7dc31cbb768cdaa55100a5d9ed4b901cb852a6e4b4694fb18fdd04aa6f7cf641"
+      "sha256": "69396e96dff9cf3dc00dc038a76f0aa8460d6c2ba9254d618c4fbf84179b3782"
     },
     "table": {
       "path": "tables/final_test_metrics.md",
-      "sha256": "c051796b9e797246a37e637580316e3817f785061428b7d0ea26314fa72c9fed"
+      "sha256": "d8278bb268a8b0fb07ddffb963e70fa0fbddb45abc732aba52d7bda85795064f"
     },
     "predicted_vs_actual_figure": {
       "path": "figures/fig03_predicted_vs_actual.png",
